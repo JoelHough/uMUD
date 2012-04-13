@@ -1,3 +1,7 @@
+function rtrim(s)
+   return s:gsub("^(.-)%s$", "%1")
+end
+
 function trim(s)
   -- from PiL2 20.4
   return (s:gsub("^%s*(.-)%s*$", "%1"))
