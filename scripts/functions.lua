@@ -11,6 +11,10 @@ function functions.new(string, f)
    
 end
 
+function no_function(...)
+   print('I don\'t know how to do that.')
+end
+
 function get_function(verb, subject, object) --Get sword with the tongs - sword = subject, tongs = object
 
    local x,y,z
