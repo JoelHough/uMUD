@@ -1,101 +1,111 @@
 require('lpeg')
-require('re')
-require('object')
+require('log')
 require('utils')
 
-collider = {}
-errpos = 0
-
-local function debug_out(text, pos, cap)
-   return true
-end
-
+local errpos = 0
+local looking_for_at = {}
 local function looking_for(thing)
    return lpeg.P(function(text, pos, cap)
-                    print(thing .. ' at pos:' .. pos .. '?  ' .. "'" .. trim(string.sub(text, pos, string.len(text))) .. "'")
-                    errpos = pos
+                    DEBUG(thing .. ' at pos:' .. pos .. '?  ' .. "'" .. rtrim(string.sub(text, pos, string.len(text))) .. "'")
+                    if pos > errpos then errpos = pos end
+                    looking_for_at[pos] = looking_for_at[pos] or {}
+                    for _, v in ipairs(looking_for_at[pos]) do
+                       if v == thing:lower() then
+                          return true
+                       end
+                    end
+                    table.insert(looking_for_at[pos], thing:lower())
                     return true
                  end)
 end
 
-ERR_POS = lpeg.P(debug_out)
-
-defs = {}
-for i,v in ipairs({'NOUN', 'VERB', 'ADVERB', 'PREPOSITION', 'CONJUNCTION', 'ARTICLE', 'ADJECTIVE', 'PRONOUN', 'STRING', 'SENTENCE', 'END_OF_SENTENCE', 'COMMAND', 'END_OF_LINE', 'NOUN_PHRASE', 'NOUN_GROUP'}) do
-   defs[v .. '_POS'] = looking_for(v)
+local function is_noun(text, pos, cap)
+   return cap == 'dirk', cap
 end
 
-grammar = re.compile([[
-                         input <- {:sentences: (sentence -> {} (end_of_sentence %s sentence -> {})*) -> {} end_of_sentence? end_of_line:} -> {}
-                         end_of_line <- %END_OF_LINE_POS %nl
-                         noun <- %NOUN_POS ('dirk' / 'sword' / 'box')
-                         verb <- %VERB_POS ('hit' / 'kick' / 'get' / 'cuddle' / 'pick up')
-                         adverb <- %ADVERB_POS ('quickly' / 'quietly' / 'loudly')
-                         preposition <- %PREPOSITION_POS ('with' / 'in' / 'on')
-                         conjunction <- %CONJUNCTION_POS ('and' / 'then')
-                         article <- %ARTICLE_POS ('the' / 'a' / 'that')
-                         adjective <- %ADJECTIVE_POS ('big' / 'small' / 'purple' / 'my')
-                         pronoun <- %PRONOUN_POS ('him' / 'her' / 'Bob')
-                         string <- %STRING_POS '".*"'
-                         sentence <- %SENTENCE_POS {:commands: (command -> {} ((%s {:conjunction: conjunction :} %s command) -> {})*) -> {} :}
-                         end_of_sentence <- %END_OF_SENTENCE_POS '.'
-                         command <- %COMMAND_POS (({:adverbs1: (adverb %s)* :} {:verb: verb:} {:adverbs2: (%s adverb)* :}
-                                                   (%s {:phrase1: noun_phrase :} {:adverbs3: (%s adverb)* :}
-                                                    (%s {:preposition: preposition:} %s {:phrase2: noun_phrase :} {:adverbs4: (%s adverb)* :})?
-                                                   )?) /
-                                                  ({:adverbs1: (adverb %s)* :} {:preposition: preposition:} %s {:phrase1: noun_phrase :} {:adverbs2: (%s adverb)* :} %s {:verb: verb:} {:adverbs3: (%s adverb)* :} %s {:phrase2: noun_phrase :} {:adverbs4: (%s adverb)* :}))
-
-                         noun_phrase <- %NOUN_PHRASE_POS {:groups: (noun_group -> {} (%s ({:preposition: preposition:} %s noun_group) -> {})*) -> {}:} -> {}
-                         noun_group <- %NOUN_GROUP_POS (({:article: article:} %s)? ([0-9]* %s)? {:adjectives:({adjective} %s)* -> {}:} ({:noun: noun:} / {:pronoun: pronoun:} / {:string: string:}))
-                      ]], defs)
-
-
-functions = {}
-functions['get thing'] = function (player, verb, subject, object) print('You pick up the ' .. subject.name) end
-functions['get dirk'] = function (player, verb, subject, object) print('You pick up the dirk and examine its edge.  Sharp.') end
-
-for i, v in ipairs({'thing', 'weapon', 'sword', 'dirk', 'box', 'verb', 'get'}) do
-   there_is_a(v)
+local function is_verb(text, pos, cap)
+   return cap == 'hit', cap
 end
 
-for i, v in ipairs({{'weapon', 'thing'}, {'sword', 'weapon'}, {'dirk', 'weapon'}, {'box', 'thing'}, {'get', 'verb'}}) do
-   is_a_kind_of(v[1], v[2])
+local function is_adverb(text, pos, cap)
+   return cap == 'quickly', cap
 end
 
-function no_function(player, verb, object)
-   print('I don\'t know how to ' .. verb .. ' the ' .. object)
+local function is_adjective(text, pos, cap)
+   return cap == 'sharp', cap
 end
 
-function get_function(a, b, c)
-   for ia, va in ipairs(get_all_parents(a)) do
-      for ib, vb in ipairs(get_all_parents(b)) do
-         print(va, vb)
-         local f = functions[va .. ' ' .. vb]
-         if f then
-            return f
-         end
+local function is_pronoun(text, pos, cap)
+   return cap == 'bob', cap
+end
+
+local function is_in(...)
+   local words = ...
+   return function(text, pos, cap)
+      for _, v in ipairs(words) do
+         if cap == v then return true, v end
       end
-   end
-   return no_function
+      return false
+          end
 end
 
-function get_objects_from_phrase(phrase)
-   local group = phrase.groups[1]
-   return group.noun or group.pronoun or group.string
+local P = lpeg.P -- Simple pattern
+local S = lpeg.S -- Set
+local R = lpeg.R -- Range
+
+local C = lpeg.C -- Simple capture
+local Cb = lpeg.Cb -- Capture back-reference
+local Cg = lpeg.Cg -- Group capture
+local Ct = lpeg.Ct -- Table capture
+local Cmt = lpeg.Cmt -- Match-time function capture
+
+local sentence_end = S'.;'
+local line_end = P(-1)
+local sep = S' ,'
+
+local word = (R'AZ' + R'az')^1 / string.lower
+
+local function word_that(f)
+   return Cmt(word, f)
 end
+
+local function token(name, patt)
+   return sep^0 * sentence_end^0 * looking_for(name:upper()) * patt * (#sep + #sentence_end + line_end)
+end
+
+local noun = token('NOUN', word_that(is_noun))
+local verb = token('VERB', word_that(is_verb))
+local adverb = token('ADVERB', word_that(is_adverb))
+local adverbs = Ct(adverb^0)
+local adjective = token('ADJECTIVE', word_that(is_adjective))
+local pronoun = token('PRONOUN', word_that(is_pronoun))
+
+local function quoted(quote_char)
+   local quote = P(quote_char)
+   return quote * C((1 - quote)^0) * quote
+end
+local quoted_string = token('STRING', quoted('"') + quoted("'") + quoted('`'))
+
+local article = token('ARTICLE', word_that(is_in({'a', 'the'})))
+local conjunction = token('CONJUNCTION', word_that(is_in({'and', 'then'})))
+local number = token('NUMBER', R'09'^1 / tonumber)
+local preposition = token('PREPOSITION', word_that(is_in({'in', 'on', 'except', 'and'})))
+
+local noun_group = Cg(article, 'article')^-1 * Cg(number, 'number')^-1 * Cg(Ct(adjective^0), 'adjectives') * (Cg(noun, 'noun') + Cg(pronoun, 'pronoun') + Cg(quoted_string, 'string'))
+local noun_phrase = Ct(Cg(Ct(Ct(noun_group) * (Ct(Cg(preposition, 'preposition') * noun_group))^0), 'groups'))
+local command = Cg(adverbs, 'adverbs1') * Cg(verb, 'verb') * Cg(adverbs, 'adverbs2') * (Cg(noun_phrase, 'subject') * Cg(adverbs, 'adverbs3') * (Cg(preposition, 'preposition') * Cg(noun_phrase, 'object') * Cg(adverbs, 'adverbs4'))^-1)^-1
+   + adverbs * Cg(preposition, 'preposition') * Cg(noun_phrase, 'object') * adverbs * Cg(verb, 'verb') * adverbs * Cg(noun_phrase, 'subject') * adverbs
+local sentence = Ct(Cg(Ct(Ct(command) * (Ct(Cg(conjunction, 'conjunction') * command))^0), 'commands'))
+
+local input = Ct(Cg(Ct(Cg(sentence) * (sentence_end * Cg(sentence))^0 * sentence_end^0 * line_end), 'sentences'))
 
 function parse(text)
-   match = grammar:match(text .. "\n")
-   printTable(match)
-
-   for _, sentence in ipairs(match.sentences) do
-      for _, command in ipairs(sentence.commands) do
-         local verb = command.verb
-         local subject, object
-         if command.phrase1 then subject = get_objects_from_phrase(command.phrase1) end
-         if command.phrase2 then object = get_objects_from_phrase(command.phrase2) end
-         print(verb, subject, object)
-         get_function(verb, subject, object)('You', collider[verb], subject and collider[subject])
-      end
+   match = input:match(text)
+   if not match then
+      print('Huh?  I ran into trouble about here: ' .. text:sub(0, errpos - 1) .. '>>>' .. text:sub(errpos))
+      print('I would\'ve liked to have found one of these: ' .. table.concat(looking_for_at[errpos], ', '))
+   else
+      printTable(match)
    end
+   return match
 end
