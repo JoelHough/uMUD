@@ -8,3 +8,5 @@ Awesome.
 
 * Notes
 Put some notes here
+
+Added some notes there ;)
