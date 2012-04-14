@@ -101,11 +101,12 @@ local input = Ct(Cg(Ct(Cg(sentence) * (sentence_end * Cg(sentence))^0 * sentence
 
 function parse(text)
    match = input:match(text)
+   local msg = ''
    if not match then
-      print('Huh?  I ran into trouble about here: ' .. text:sub(0, errpos - 1) .. '>>>' .. text:sub(errpos))
-      print('I would\'ve liked to have found one of these: ' .. table.concat(looking_for_at[errpos], ', '))
+      msg = 'Huh?  I ran into trouble about here: ' .. text:sub(0, errpos - 1) .. '>>>' .. text:sub(errpos)
+      msg = msg .. "\n" .. 'I would\'ve liked to have found one of these: ' .. table.concat(looking_for_at[errpos], ', ')
    else
-      printTable(match)
+      printTable(match, DEBUG)
    end
-   return match
+   return match, msg
 end
