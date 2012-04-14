@@ -9,8 +9,7 @@ function get(atom_name)
 end
 
 ---------------------------------------------------------------------------------------
-function is_a_kind_of(child, parent)
-
+function add_parent(child, parent)
 
    if collider[child] then
       if collider[parent] then
@@ -36,7 +35,7 @@ function is_a_kind_of(child, parent)
 end
 
 
-function there_is_a(child)
+function add_atom(child)
 
    if not collider[child] then
       collider[child] = { name = child, anc = { } , desc = { } }
@@ -46,6 +45,20 @@ function there_is_a(child)
 end
 
 ---------------------------------------------------------------------------------------
+function is_child_of(child, parent)
+   local child_atom = get(child)
+   if not child_atom then
+      ERROR(child .. ' does not exist!')
+      return false
+   end
+   local parent_atom = get(parent)
+   if not parent_atom then
+      ERROR(parent .. ' does not exist!')
+      return false
+   end
+   if child_atom == parent_atom then return true end
+   return any(child_atom.ancestors, bind2(is_child_of, parent))
+end
 
 function get_all_children(parent)
    return get_all(parent, "desc")
@@ -101,15 +114,15 @@ end
 
 function test()
    TEST'Beginning type system test'
-   there_is_a("one")
-   there_is_a("two")
-   there_is_a("three")
-   there_is_a("four")
+   add_atom("one")
+   add_atom("two")
+   add_atom("three")
+   add_atom("four")
    
-   is_a_kind_of("two","one")
-   is_a_kind_of("three","one")
-   is_a_kind_of("four","two")
-   is_a_kind_of("four","three")
+   add_parent("two","one")
+   add_parent("three","one")
+   add_parent("four","two")
+   add_parent("four","three")
 
 
    results =  get_all_children("one")
@@ -117,8 +130,8 @@ function test()
    results = get_all_parents("four")
    INFO("Parents of four \t", unpack(results) )
 
-   --test is_a_kind_of
-   --test there_is_a
+   --test add_parent
+   --test add_atom
 
 
    TEST'End of type system test'

@@ -10,8 +10,8 @@ function rtrim(s)
 end
 
 function trim(s)
-  -- from PiL2 20.4
-  return (s:gsub("^%s*(.-)%s*$", "%1"))
+   -- from PiL2 20.4
+   return (s:gsub("^%s*(.-)%s*$", "%1"))
 end
 
 function printTable(t, print_func)
@@ -23,9 +23,11 @@ function printTable(t, print_func)
             printTableHelper(v, spacing.."  ")
             --f(spacing..'} //' .. tostring(k))
          else
-           f(spacing..tostring(k) .. '=' .. v)
+            f(spacing..tostring(k) .. '=' .. v)
          end
       end
    end
    printTableHelper(t, "");
 end
+
+

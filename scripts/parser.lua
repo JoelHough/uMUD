@@ -1,3 +1,11 @@
+--[[ Parser Notes --
+--- I wish I could parse...
+get the red and gold dirk -- Conjunction joined adjectives
+get the red dirk, blue dirk, and green dirk -- Preposition-less noun-groups
+get the red, blue, and/or green dirk -- Adjective lists with one preposition
+pick up dirk -- Two part verbs (kind of can with preposition modifiers, see function finder)
+]]
+
 require('lpeg')
 require('log')
 require('utils')
