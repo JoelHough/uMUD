@@ -1,8 +1,12 @@
 -- uMUD Object Heirarchy
-
-
+require'utils'
+require'log'
 
 collider = { }
+
+function get(atom_name)
+   return collider[atom_name]
+end
 
 ---------------------------------------------------------------------------------------
 function is_a_kind_of(child, parent)
@@ -10,9 +14,18 @@ function is_a_kind_of(child, parent)
 
    if collider[child] then
       if collider[parent] then
-
-      table.insert(collider[child].anc, collider[parent])
-      table.insert(collider[parent].desc, collider[child])
+         if table.find(get_all_parents(child), parent) then
+            -- Already inherits
+            WARNING(child .. ' already inherits from ' .. parent)
+            return nil
+         end
+         if table.find(get_all_children(child), parent) then
+            -- Cycle==Bad
+            WARNING(parent .. ' inherits from ' .. child .. '.  Not linking to avoid cycles.')
+            return nil
+         end
+         table.insert(collider[child].anc, collider[parent])
+         table.insert(collider[parent].desc, collider[child])
       else
 	 print(parent .. " doesn't exist!")
       end
