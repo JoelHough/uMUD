@@ -41,7 +41,7 @@ function there_is_a(child)
    if not collider[child] then
       collider[child] = { name = child, anc = { } , desc = { } }
    else
-      print(child .. " already exists")
+      WARNING(child .. " already exists")
    end
 end
 
@@ -100,7 +100,7 @@ end
 
 
 function test()
-
+   TEST'Beginning type system test'
    there_is_a("one")
    there_is_a("two")
    there_is_a("three")
@@ -113,15 +113,15 @@ function test()
 
 
    results =  get_all_children("one")
-   print("Children of one \t", unpack(results) )
+   INFO("Children of one \t", unpack(results) )
    results = get_all_parents("four")
-   print("Parents of four \t", unpack(results) )
+   INFO("Parents of four \t", unpack(results) )
 
    --test is_a_kind_of
    --test there_is_a
 
 
-
+   TEST'End of type system test'
 end
 
 --Run test--
