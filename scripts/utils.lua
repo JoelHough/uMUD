@@ -1,3 +1,10 @@
+function table.find(t, val)
+   for k, v in pairs(t) do
+      if v == val then return k end
+   end
+   return nil
+end
+
 function rtrim(s)
    return s:gsub("^(.-)%s$", "%1")
 end
