@@ -14,17 +14,18 @@ function trim(s)
   return (s:gsub("^%s*(.-)%s*$", "%1"))
 end
 
-function printTable(t)
-    function printTableHelper(t, spacing)
-        for k,v in pairs(t) do
-            if (type(v) == "table") then
-               print(spacing..tostring(k))
-               printTableHelper(v, spacing.."  ")
-               --print(spacing..'} //' .. tostring(k))
-            else
-               print(spacing..tostring(k) .. '=' .. v)
-            end
-        end
-    end
-    printTableHelper(t, "");
+function printTable(t, print_func)
+   local f = print_func or print
+   function printTableHelper(t, spacing)
+      for k,v in pairs(t) do
+         if (type(v) == "table") then
+            f(spacing..tostring(k))
+            printTableHelper(v, spacing.."  ")
+            --f(spacing..'} //' .. tostring(k))
+         else
+           f(spacing..tostring(k) .. '=' .. v)
+         end
+      end
+   end
+   printTableHelper(t, "");
 end
