@@ -73,6 +73,11 @@ local function token(name, patt)
    return sep^0 * sentence_end^0 * looking_for(name:upper()) * patt * (#sep + #sentence_end + line_end)
 end
 
+-- Separated for convenience
+local prepositions = {'with', 'on', 'except', 'and'}
+local conjunctions = {'and', 'then'}
+local articles = {'a', 'the'}
+
 local noun = token('NOUN', word_that(is_noun))
 local verb = token('VERB', word_that(is_verb))
 local adverb = token('ADVERB', word_that(is_adverb))
@@ -86,15 +91,15 @@ local function quoted(quote_char)
 end
 local quoted_string = token('STRING', quoted('"') + quoted("'") + quoted('`'))
 
-local article = token('ARTICLE', word_that(is_in({'a', 'the'})))
-local conjunction = token('CONJUNCTION', word_that(is_in({'and', 'then'})))
+local article = token('ARTICLE', word_that(is_in(articles)))
+local conjunction = token('CONJUNCTION', word_that(is_in(conjunctions)))
 local number = token('NUMBER', R'09'^1 / tonumber)
-local preposition = token('PREPOSITION', word_that(is_in({'in', 'on', 'except', 'and'})))
+local preposition = token('PREPOSITION', word_that(is_in(prepositions)))
 
 local noun_group = Cg(article, 'article')^-1 * Cg(number, 'number')^-1 * Cg(Ct(adjective^0), 'adjectives') * (Cg(noun, 'noun') + Cg(pronoun, 'pronoun') + Cg(quoted_string, 'string'))
 local noun_phrase = Ct(Cg(Ct(Ct(noun_group) * (Ct(Cg(preposition, 'preposition') * noun_group))^0), 'groups'))
 local command = Cg(adverbs, 'adverbs1') * Cg(verb, 'verb') * Cg(adverbs, 'adverbs2') * (Cg(noun_phrase, 'subject') * Cg(adverbs, 'adverbs3') * (Cg(preposition, 'preposition') * Cg(noun_phrase, 'object') * Cg(adverbs, 'adverbs4'))^-1)^-1
-   + adverbs * Cg(preposition, 'preposition') * Cg(noun_phrase, 'object') * adverbs * Cg(verb, 'verb') * adverbs * Cg(noun_phrase, 'subject') * adverbs
+   + Cg(adverbs, 'adverbs1') * Cg(preposition, 'preposition') * Cg(noun_phrase, 'object') * Cg(adverbs, 'adverbs2') * Cg(verb, 'verb') * Cg(adverbs, 'adverbs3') * Cg(noun_phrase, 'subject') * Cg(adverbs, 'adverbs4')
 local sentence = Ct(Cg(Ct(Ct(command) * (Ct(Cg(conjunction, 'conjunction') * command))^0), 'commands'))
 
 local input = Ct(Cg(Ct(Cg(sentence) * (sentence_end * Cg(sentence))^0 * sentence_end^0 * line_end), 'sentences'))
