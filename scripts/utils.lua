@@ -5,6 +5,14 @@ function table.find(t, val)
    return nil
 end
 
+function words(str)
+   local result = {}
+   for word in str:gmatch('%w+') do
+      table.insert(result, word)
+   end
+   return result
+end
+
 function rtrim(s)
    return s:gsub("^(.-)%s$", "%1")
 end

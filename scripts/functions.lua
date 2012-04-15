@@ -1,18 +1,24 @@
 -- Functions table handling.
-require('types')
+require'types'
+require'log'
+require'utils'
 
+local functions = { }
 
-functions = { }
-
-function functions.new(string, f)
-   if not functions[string] then   
-      funcions[string] = f
+local function new_function_(atoms, func, funcs, level)
+   if #atoms < level then
+      if funcs[1] then WARNING('Overriding function for \'' .. table.concat(atoms, ' ') .. "'") end
+      funcs[1] = func
+   else
+      local atom = atoms[level]
+      if not funcs[atom] then funcs[atom] = {} end
+      new_function_(atoms, func, funcs[atom], level + 1)
    end
-   
 end
 
-function no_function(...)
-   print('I don\'t know how to do that.')
+function new_function(atoms, func)
+   if type(atoms) == 'string' then atoms = words(atoms) end
+   new_function_(atoms, func, functions, 1)
 end
 
 function modified_function(verb, preposition, adverbs)
@@ -36,42 +42,30 @@ function modified_function(verb, preposition, adverbs)
    return new_verb
 end
 
-function get_function(verb, subject, object) --Get sword with the tongs - sword = subject, tongs = object
+local function do_nothing(...)
+   
+end
 
-   local x,y,z
-
-   x = helper(verb)
-   y = helper(subject)
-   z = helper(object)
-
-   for ix,vx in ipairs(x) do
-
-      for iy,vy in ipairs(y) do
-	 for iz,vz in ipairs(z) do
-	    output = vx .. vy .. vz
-	    local f = functions[output:match(".*%S")]
-	    if f then
-	       return f
-	    end
-
-	 end
+local function get_function_(atoms, funcs, level)
+   if #atoms < level then return funcs[1] end
+   local ancestry = get_all_parents(atoms[level])
+   for _, v in ipairs(ancestry) do
+      local sub_funcs = funcs[v]
+      if sub_funcs then
+         local f = get_function(atoms, sub_funcs, level + 1) or sub_funcs[1]
+         if f then return f end
       end
    end
-   return no_function
+   return nil
 end
 
-
--- Small helper function to take in an atom (verb, subject, etc...) and return its parents in the heirarchy.
--- Should the atom be nil, meaning it wasn't supplied as an arg in get_function, it returns a table containing an empty string.
-function helper(atom)
-   if not atom then
-      x = { }
-      return { "" }
-   else
-      return get_all_parents(atom)
+function get_function(atoms)
+   if type(atoms) == 'string' then atoms = words(atoms) end
+   local f = get_function_(atoms, functions, 1)
+   if not f then
+      WARNING('No function found for \'' .. table.concat(atoms, ' ') .. '\'.  Returning do_nothing()')
+      return do_nothing
    end
+   return f
 end
-
-
-
-
+F = get_function
