@@ -1,4 +1,5 @@
 -- uMUD Object Heirarchy
+require'functional'
 require'utils'
 require'log'
 
@@ -45,6 +46,11 @@ function add_atom(child)
 end
 
 ---------------------------------------------------------------------------------------
+local function is_child_of_(child_atom, parent_atom)
+   if child_atom == parent_atom then return true end
+   return any(child_atom.anc, bind2(is_child_of_, parent_atom))
+end
+
 function is_child_of(child, parent)
    local child_atom = get(child)
    if not child_atom then
@@ -56,8 +62,7 @@ function is_child_of(child, parent)
       ERROR(parent .. ' does not exist!')
       return false
    end
-   if child_atom == parent_atom then return true end
-   return any(child_atom.ancestors, bind2(is_child_of, parent))
+   return is_child_of_(child_atom, parent_atom)
 end
 
 function get_all_children(parent)
@@ -82,9 +87,7 @@ function get_all(root, rel)
       --Check to see if node is in visited.
       -- if it is, continue
       if not contains(visited, node) then
-
 	 table.insert(visited,node)
-
 	 for i,v in ipairs(node[rel]) do
 	    table.insert(to_visit, v )
 	 end

@@ -6,9 +6,10 @@ get the red, blue, and/or green dirk -- Adjective lists with one preposition
 pick up dirk -- Two part verbs (kind of can with preposition modifiers, see function finder)
 ]]
 
-require('lpeg')
-require('log')
-require('utils')
+require'types'
+require'lpeg'
+require'log'
+require'utils'
 
 local errpos = 0
 local looking_for_at = {}
@@ -28,23 +29,23 @@ local function looking_for(thing)
 end
 
 local function is_noun(text, pos, cap)
-   return cap == 'dirk', cap
+   return is_child_of(cap, 'noun'), cap
 end
 
 local function is_verb(text, pos, cap)
-   return cap == 'hit', cap
+   return is_child_of(cap, 'verb')
 end
 
 local function is_adverb(text, pos, cap)
-   return cap == 'quickly', cap
+   return is_child_of(cap, 'adverb')
 end
 
 local function is_adjective(text, pos, cap)
-   return cap == 'sharp', cap
+   return is_child_of(cap, 'adjective')
 end
 
 local function is_pronoun(text, pos, cap)
-   return cap == 'bob', cap
+   return is_child_of(cap, 'pronoun')
 end
 
 local function is_in(...)
