@@ -1,3 +1,14 @@
+function table.reverse_value_string(t, sep)
+   local result = ''
+   if #t > 0 then
+      result = t[#t]
+      for i = #t - 1, 1, -1 do
+         result = result .. (sep or ' ') .. t[i]
+      end
+   end
+   return result
+end
+
 function table.find(t, val)
    for k, v in pairs(t) do
       if v == val then return k end
@@ -7,7 +18,7 @@ end
 
 function words(str)
    local result = {}
-   for word in str:gmatch('%w+') do
+   for word in str:gmatch('[^ ]+') do
       table.insert(result, word)
    end
    return result

@@ -1,27 +1,34 @@
 require'log'
-require'parser'
-require'binder'
 require'types'
 require'functions'
+require'parser'
+require'binder'
+require'things'
+require'player'
+require'muderator'
+
+function say(text)
+   return got_player_text('God', text)
+end
 
 function got_player_text(name, text)
    -- Got text from player's client
    DEBUG(name .. '->' .. text)
 
+   local player = get_thing(name)
+   if not player then
+      ERROR('Command from invalid player \'' .. name .. '\'')
+      return nil
+   end
    local ast, msg = parse(text)
    if not ast then
       send_player_text(name, msg)
       return nil
    end
          
-   for _, sentence in ipairs(match.sentences) do
+   for _, sentence in ipairs(ast.sentences) do
       for _, command in ipairs(sentence.commands) do
-         local verb = command.verb
-         local subject, object
-         if command.phrase1 then subject = get_objects_from_phrase(command.phrase1) end
-         if command.phrase2 then object = get_objects_from_phrase(command.phrase2) end
-         DEBUG(locals('verb', 'subject', 'object'))
-         get_function(verb, subject, object)(things[name], collider[verb], subject and collider[subject])
+         bind_and_execute(player, command)
       end
    end
 end

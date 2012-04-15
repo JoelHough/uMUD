@@ -5,23 +5,29 @@ require'utils'
 
 local functions = { }
 
-local function new_function_(atoms, func, funcs, level)
+local function add_function_(atoms, func, funcs, level)
    if #atoms < level then
       if funcs[1] then WARNING('Overriding function for \'' .. table.concat(atoms, ' ') .. "'") end
       funcs[1] = func
    else
       local atom = atoms[level]
       if not funcs[atom] then funcs[atom] = {} end
-      new_function_(atoms, func, funcs[atom], level + 1)
+      add_function_(atoms, func, funcs[atom], level + 1)
    end
 end
 
-function new_function(atoms, func)
+function add_function(atoms, func)
    if type(atoms) == 'string' then atoms = words(atoms) end
-   new_function_(atoms, func, functions, 1)
+   add_function_(atoms, func, functions, 1)
 end
 
-function modified_function(verb, preposition, adverbs)
+function add_functions(funcs)
+   for atoms, func in pairs(funcs) do
+      add_function(atoms, func)
+   end
+end
+
+function modified_verb(verb, preposition, adverbs)
    -- Turns 'get', 'with', and {'quickly'} from 'quickly get <subject> with <object>' 
    -- into the verb 'get-with-quickly', if such a variation exists.
    -- Adverbs are optional.  No get-quickly?  get will work fine.
@@ -29,7 +35,10 @@ function modified_function(verb, preposition, adverbs)
 
    -- Simple name-mangling is used to find function forms.
    -- First, append '-<preposition>', so 'get' becomes 'get-with'
-   local new_verb = verb .. '-' .. preposition
+   local new_verb = verb
+   if preposition then 
+      new_verb = new_verb .. '-' .. preposition
+   end
 
    -- TODO: Then, we do some magic for finding verbs that are modified by adverbs.
    -- Well, we don't yet because our adverbs are just for flavor right now, and the
@@ -42,18 +51,17 @@ function modified_function(verb, preposition, adverbs)
    return new_verb
 end
 
-local function do_nothing(...)
-   
-end
-
-local function get_function_(atoms, funcs, level)
+local function get_function_(atoms, funcs, level, names)
    if #atoms < level then return funcs[1] end
    local ancestry = get_all_parents(atoms[level])
    for _, v in ipairs(ancestry) do
       local sub_funcs = funcs[v]
       if sub_funcs then
-         local f = get_function(atoms, sub_funcs, level + 1) or sub_funcs[1]
-         if f then return f end
+         local f = get_function_(atoms, sub_funcs, level + 1, names) or sub_funcs[1]
+         if f ~= nil then
+            table.insert(names, v)
+            return f
+         end
       end
    end
    return nil
@@ -61,10 +69,12 @@ end
 
 function get_function(atoms)
    if type(atoms) == 'string' then atoms = words(atoms) end
-   local f = get_function_(atoms, functions, 1)
-   if not f then
-      WARNING('No function found for \'' .. table.concat(atoms, ' ') .. '\'.  Returning do_nothing()')
-      return do_nothing
+   local found = {}
+   local f = get_function_(atoms, functions, 1, found)
+   if f == nil then
+      WARNING('No function found for \'' .. table.concat(atoms, ' ') .. '\'.')
+   else
+      DEBUG('Found function \'' .. table.reverse_value_string(found) .. '\' for \'' .. table.concat(atoms, ' ') .. '\'')
    end
    return f
 end

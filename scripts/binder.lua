@@ -1,5 +1,15 @@
 require'functional'
 require'types'
+require'functions'
+
+add_atoms{'bind-modes', 'verb'}
+
+-- Bind-modes:
+-- none = Do not bind.  The whole noun_group is used as an argument
+-- standard = Everything reachable in the room or any open containers(recursive) in the room, then player's inventory[, then other's inventory?].  Passes an object from things
+-- inventory = Player's inventory only. Passes an object from things.
+
+add_function('bind-modes verb', {subject='standard', object='standard'})
 
 function get_objects_from_phrase(container, phrase)
    -- For each group, modify a selected item list using world queries
@@ -29,5 +39,66 @@ end
 
 function types_match(types, atoms)
    -- Each type must be a child of at least one atom.
-   return all(types, compose(bind1(any, atoms), curry(is_child_of))
+   return all(types, compose(bind1(any, atoms), curry(is_child_of)))
+end
+
+local function group_item(group)
+   return group.noun or group.pronoun or 'string'
+end
+
+local function bind_phrase(player, phrase, bind_mode)
+   DEBUG('Bind mode is ' .. bind_mode)
+   if not phrase then return nil end
+   local results = {}
+   if bind_mode == 'none' then
+      for _, group in ipairs(phrase.groups) do
+         table.insert(results, {type=group_item(group), value=group})
+      end
+   end
+   return results
+end
+
+local function huh(...)
+   print('I don\'t know how to do that.')
+end
+
+local function safe_f(f)
+   local f = get_function(f)
+   if type(f) ~= 'function' then
+      DEBUG'Unknown function'
+      return huh
+   else
+      return f
+   end
+end
+
+function bind_and_execute(player, command)
+   DEBUG('Binding and executing command from ' .. player.name)
+   local verb = modified_verb(command.verb, command.preposition, command.adverbs)
+   DEBUG('Verb is \'' .. verb .. '\'')
+   local bind_modes = F{'bind-modes', verb}
+   printTable(bind_modes)
+   local subjects = bind_phrase(player, command.subject, bind_modes.subject)
+   local objects = bind_phrase(player, command.object, bind_modes.object)
+
+   if not subjects then
+      DEBUG'Bare verb'
+      safe_f{player.type, verb}(player, verb)
+   elseif not objects then
+      DEBUG('Bound ' .. #subjects .. ' subjects')
+      if #subjects == 0 then
+         print('Couldn\'t find anything by that description')
+      else
+         for _, subject in pairs(subjects) do
+            safe_f{player.type, verb, subject.type}(player, verb, subject.value)
+         end
+      end
+   else
+      DEBUG('Bound ' .. #subjects .. ' subjects and ' .. #objects .. ' objects')
+      for _, subject in pairs(subjects) do
+         for _, object in pairs(objects) do
+            safe_f{player.type, verb, subject.type, object.type}(player, verb, subject.value, object.value)
+         end
+      end
+   end
 end

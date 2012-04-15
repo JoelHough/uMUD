@@ -11,7 +11,7 @@ end
 
 ---------------------------------------------------------------------------------------
 function add_parent(child, parent)
-
+   DEBUG('Relating ' .. child .. '->' .. parent)
    if collider[child] then
       if collider[parent] then
          if table.find(get_all_parents(child), parent) then
@@ -21,27 +21,68 @@ function add_parent(child, parent)
          end
          if table.find(get_all_children(child), parent) then
             -- Cycle==Bad
-            WARNING(parent .. ' inherits from ' .. child .. '.  Not linking to avoid cycles.')
+            ERROR(parent .. ' inherits from ' .. child .. '.  Not linking to avoid cycles.')
             return nil
          end
          table.insert(collider[child].anc, collider[parent])
          table.insert(collider[parent].desc, collider[child])
       else
-	 print(parent .. " doesn't exist!")
+	 ERROR(parent .. " doesn't exist!")
       end
    else
-      print(child .." doesn't exist!")
+      ERROR(child .." doesn't exist!")
    end
 
 end
 
 
 function add_atom(child)
-
+   DEBUG('Adding atom ' .. child)
    if not collider[child] then
       collider[child] = { name = child, anc = { } , desc = { } }
    else
-      WARNING(child .. " already exists")
+      INFO(child .. " already exists")
+   end
+end
+
+function add_atoms(atoms)
+   --[[Can handle...
+   {'atom', 
+    child='parent', 
+    [{'child', 'child'}]='parent', 
+    child={'parent', 'parent'},
+    [{'child', 'child'}]={'parent', 'parent'}
+   }]]
+
+   for c, p in pairs(atoms) do
+      if type(p) == 'string' then
+         add_atom(p)
+         if type(c) == 'string' then 
+            add_atom(c)
+            add_parent(c, p)
+         elseif type(c) == 'table' then
+            for _, c2 in ipairs(c) do
+               add_atom(c2)
+               add_parent(c2, p)
+            end
+         end
+      elseif type(p) == 'table' then
+         if type(c) == 'string' then 
+            add_atom(c)
+            for _, p2 in ipairs(p) do
+               add_atom(p2)
+               add_parent(c, p2)
+            end
+         elseif type(c) == 'table' then
+            for _, c2 in ipairs(c) do
+               add_atom(c2)
+               for _, p2 in ipairs(p) do
+                  add_atom(p2)
+                  add_parent(c2, p2)
+               end
+            end
+         end
+      end
    end
 end
 

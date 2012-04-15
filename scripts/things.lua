@@ -5,10 +5,22 @@
    Upon creation, it needs a place in things {} and it needs a unique ID, and a container it's housed in.
 
    ]]--
-require('types')
 
-things = { }
+local things = { }
 
+function get_thing(id)
+   return things[id:lower()]
+end
+
+function add_thing(name, data)
+   local id = name:lower()
+   if things[id] then
+      ERROR('Tried adding thing \'' .. id .. '\' that already exists!')
+      return nil
+   end
+   things[id] = data
+   return id
+end
 
 --Function for creation. Places the supplied 'thing' into the list of things. Also keeps a count of how many of
 --That particular thing exist at present.
@@ -39,3 +51,11 @@ function destroy(thing, ...)
       --things[thing]
    end
 end
+
+add_atoms{[{'create', 'destroy', 'tell', 'description'}]='verb', ['say-to']='tell', thing='noun', ['in']='preposition'}
+add_functions{
+   ['bind-modes create'] = {subject='none', object='none'},
+   ['bind-modes create-in'] = {subject='none', object='standard'},
+   ['describe thing'] = function(thing) return 'It looks like an ordinary ' .. thing.name end, -- TODO: What to do about second vs. third person descriptions?
+   ['create-in thing container'] = function (thing_group) print('Creating a ' .. thing_group.noun) end,
+             }
