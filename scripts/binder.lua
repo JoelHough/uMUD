@@ -2,14 +2,14 @@ require'functional'
 require'types'
 require'functions'
 
-add_atoms{'bind-modes', 'verb'}
+add_atoms{'bind-modes', [{'and', 'except'}]='noun-preposition'}
 
 -- Bind-modes:
 -- none = Do not bind.  The whole noun_group is used as an argument
 -- standard = Everything reachable in the room or any open containers(recursive) in the room, then player's inventory[, then other's inventory?].  Passes an object from things
 -- inventory = Player's inventory only. Passes an object from things.
 
-add_function('bind-modes verb', {subject='standard', object='standard'})
+add_function('bind-modes', {subject='standard', object='standard'})
 
 function get_objects_from_phrase(container, phrase)
    -- For each group, modify a selected item list using world queries
@@ -43,7 +43,7 @@ function types_match(types, atoms)
 end
 
 local function group_item(group)
-   return group.noun or group.pronoun or 'string'
+   return group.noun or group.pronoun or 'string-type'
 end
 
 local function bind_phrase(player, phrase, bind_mode)
@@ -76,6 +76,12 @@ function bind_and_execute(player, command)
    DEBUG('Binding and executing command from ' .. player.name)
    local verb = modified_verb(command.verb, command.preposition, command.adverbs)
    DEBUG('Verb is \'' .. verb .. '\'')
+   if not get_atom(verb) then
+      -- The verb coming in has been vetted already, so only the preposition form is invalid
+      print('I don\'t know how to ' .. command.verb .. ' things ' .. command.preposition .. ' stuff.')
+      return nil
+   end
+
    local bind_modes = F{'bind-modes', verb}
    printTable(bind_modes)
    local subjects = bind_phrase(player, command.subject, bind_modes.subject)
@@ -95,9 +101,13 @@ function bind_and_execute(player, command)
       end
    else
       DEBUG('Bound ' .. #subjects .. ' subjects and ' .. #objects .. ' objects')
-      for _, subject in pairs(subjects) do
-         for _, object in pairs(objects) do
-            safe_f{player.type, verb, subject.type, object.type}(player, verb, subject.value, object.value)
+      if #subjects == 0 or #objects == 0 then
+         print('Couldn\'t find anything by that description')
+      else
+         for _, subject in pairs(subjects) do
+            for _, object in pairs(objects) do
+               safe_f{player.type, verb, subject.type, object.type}(player, verb, subject.value, object.value)
+            end
          end
       end
    end

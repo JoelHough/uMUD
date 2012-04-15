@@ -3,9 +3,9 @@ require'functional'
 require'utils'
 require'log'
 
-collider = { }
+local collider = { }
 
-function get(atom_name)
+function get_atom(atom_name)
    return collider[atom_name]
 end
 
@@ -93,12 +93,12 @@ local function is_child_of_(child_atom, parent_atom)
 end
 
 function is_child_of(child, parent)
-   local child_atom = get(child)
+   local child_atom = get_atom(child)
    if not child_atom then
       ERROR(child .. ' does not exist!')
       return false
    end
-   local parent_atom = get(parent)
+   local parent_atom = get_atom(parent)
    if not parent_atom then
       ERROR(parent .. ' does not exist!')
       return false
@@ -119,6 +119,10 @@ end
 function get_all(root, rel)
 
    local to_visit = { collider[root] }
+   if #to_visit == 0 then
+      ERROR(root .. ' doesn\'t exist!')
+      return nil
+   end
    local visited = { }
 
    while next(to_visit) do
@@ -182,4 +186,6 @@ function test()
 end
 
 --Run test--
-test()
+--test()
+
+add_atoms{'string-type'}

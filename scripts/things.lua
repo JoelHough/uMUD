@@ -52,10 +52,12 @@ function destroy(thing, ...)
    end
 end
 
-add_atoms{[{'create', 'destroy', 'tell', 'description'}]='verb', ['say-to']='tell', thing='noun', ['in']='preposition'}
+add_atoms{[{'create', 'destroy', 'say', 'description'}]='verb', thing='noun', [{'in', 'to'}]='preposition', 'say-to'}
 add_functions{
    ['bind-modes create'] = {subject='none', object='none'},
    ['bind-modes create-in'] = {subject='none', object='standard'},
    ['describe thing'] = function(thing) return 'It looks like an ordinary ' .. thing.name end, -- TODO: What to do about second vs. third person descriptions?
    ['create-in thing container'] = function (thing_group) print('Creating a ' .. thing_group.noun) end,
+   ['bind-modes say-to'] = {subject='none', object='none'},
+   ['thing say-to string-type thing'] = function (speaker, verb, msg, target) print(speaker.name ' says "' .. msg .. '" to ' .. target.name '.') end
              }

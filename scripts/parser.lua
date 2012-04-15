@@ -11,7 +11,7 @@ require'lpeg'
 require'log'
 require'utils'
 
-local new_atoms = {'preposition', 'noun', 'verb', 'adjective', 'adverb', 'pronoun'}
+local new_atoms = {'preposition', 'noun', 'noun-preposition', 'verb', 'adjective', 'adverb', 'pronoun'}
 add_atoms(new_atoms)
 
 -- Separated for convenience
@@ -44,6 +44,7 @@ end
 
 local is_preposition = is_atom('preposition')
 local is_noun = is_atom('noun')
+local is_noun_preposition = is_atom('noun-preposition')
 local is_verb = is_atom('verb')
 local is_adverb = is_atom('adverb')
 local is_adjective = is_atom('adjective')
@@ -104,6 +105,7 @@ end
 
 local preposition = token('PREPOSITION', word_that(is_preposition))
 local noun = token('NOUN', word_that(is_noun))
+local noun_preposition = token('NOUN_PREPOSITION', word_that(is_noun_preposition))
 local verb = token('VERB', word_that(is_verb))
 local adverb = token('ADVERB', word_that(is_adverb))
 local adverbs = Ct(adverb^0)
@@ -121,7 +123,7 @@ local conjunction = token('CONJUNCTION', word_that(is_in(conjunctions)))
 local number = token('NUMBER', R'09'^1 / tonumber)
 
 local noun_group = Cg(article, 'article')^-1 * Cg(number, 'number')^-1 * Cg(Ct(adjective^0), 'adjectives') * (Cg(noun, 'noun') + Cg(pronoun, 'pronoun') + Cg(quoted_string, 'string'))
-local noun_phrase = Ct(Cg(Ct(Ct(noun_group) * (Ct(Cg(preposition, 'preposition') * noun_group))^0), 'groups'))
+local noun_phrase = Ct(Cg(Ct(Ct(noun_group) * (Ct(Cg(noun_preposition, 'preposition') * noun_group))^0), 'groups'))
 local command = Cg(adverbs, 'adverbs1') * Cg(verb, 'verb') * Cg(adverbs, 'adverbs2') * (Cg(noun_phrase, 'subject') * Cg(adverbs, 'adverbs3') * (Cg(preposition, 'preposition') * Cg(noun_phrase, 'object') * Cg(adverbs, 'adverbs4'))^-1)^-1
    + Cg(adverbs, 'adverbs1') * Cg(preposition, 'preposition') * Cg(noun_phrase, 'object') * Cg(adverbs, 'adverbs2') * Cg(verb, 'verb') * Cg(adverbs, 'adverbs3') * Cg(noun_phrase, 'subject') * Cg(adverbs, 'adverbs4')
 local sentence = Ct(Cg(Ct(Cmt(Ct(command), combine_adverbs) * Cmt(Ct(Cg(conjunction, 'conjunction') * command), combine_adverbs)^0), 'commands'))
@@ -129,6 +131,8 @@ local sentence = Ct(Cg(Ct(Cmt(Ct(command), combine_adverbs) * Cmt(Ct(Cg(conjunct
 local input = Ct(Cg(Ct(Cg(sentence) * (sentence_end * Cg(sentence))^0 * sentence_end^0 * line_end), 'sentences'))
 
 function parse(text)
+   errpos = 0
+   looking_for_at = {}
    local match = input:match(text)
    local msg = ''
    if not match then
