@@ -59,7 +59,7 @@ local function get_function_(atoms, funcs, level, names)
       if sub_funcs then
          local f = get_function_(atoms, sub_funcs, level + 1, names) or sub_funcs[1]
          if f ~= nil then
-            table.insert(names, v)
+            table.insert(names, 1, v)
             return f
          end
       end
@@ -74,7 +74,7 @@ function get_function(atoms)
    if f == nil then
       WARNING('No function found for \'' .. table.concat(atoms, ' ') .. '\'.')
    else
-      DEBUG('Found function \'' .. table.reverse_value_string(found) .. '\' for \'' .. table.concat(atoms, ' ') .. '\'')
+      DEBUG('Found function \'' .. table.concat(found, ' ') .. '\' for \'' .. table.concat(atoms, ' ') .. '\'')
    end
    return f
 end

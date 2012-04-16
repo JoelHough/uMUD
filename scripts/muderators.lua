@@ -1,10 +1,13 @@
-require'player'
+require'players'
+require'containers'
 require'rooms'
 
 add_atoms{muderator='player'}
 
 add_player('God', {type='muderator', name='God'})
-move_thing(get_thing('God'), get_room('void'))
+add_player('MysteriousForce', {type='muderator', name='a mysterious force'})
+
+F'put-in muderator room'(get_thing('God'), get_room('void'))
 
 add_functions{
    ['muderator create thing'] = function (player, verb, thing_group) print(player.name .. ' creates a ' .. thing_group.noun) end,

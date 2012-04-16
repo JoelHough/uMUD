@@ -33,6 +33,27 @@ function trim(s)
    return (s:gsub("^%s*(.-)%s*$", "%1"))
 end
 
+-- From TableUtils
+function table.count(tt, item)
+  local count
+  count = 0
+  for ii,xx in pairs(tt) do
+    if item == xx then count = count + 1 end
+  end
+  return count
+end
+function table.unique(tt)
+  local newtable
+  newtable = {}
+  for ii,xx in ipairs(tt) do
+    if(table.count(newtable, xx) == 0) then
+      newtable[#newtable+1] = xx
+    end
+  end
+  return newtable
+end
+
+-- From http://stackoverflow.com/questions/4934100/get-nested-table-result-in-lua
 function printTable(t, print_func)
    local f = print_func or print
    function printTableHelper(t, spacing)

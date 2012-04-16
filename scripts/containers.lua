@@ -18,5 +18,5 @@ end
 add_atoms{[{'container', 'contents'}]='noun', put='preposition', 'put-in'}
 
 add_functions{
-   ['put-in thing container'] = insert_thing,
+   ['put-in thing container'] = move_thing,
              }

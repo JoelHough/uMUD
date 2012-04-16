@@ -58,6 +58,6 @@ add_functions{
    ['bind-modes create-in'] = {subject='none', object='standard'},
    ['describe thing'] = function(thing) return 'It looks like an ordinary ' .. thing.name end, -- TODO: What to do about second vs. third person descriptions?
    ['create-in thing container'] = function (thing_group) print('Creating a ' .. thing_group.noun) end,
-   ['bind-modes say-to'] = {subject='none', object='none'},
-   ['thing say-to string-type thing'] = function (speaker, verb, msg, target) print(speaker.name ' says "' .. msg .. '" to ' .. target.name '.') end
+   ['bind-modes say-to'] = {subject='none', object='standard'},
+   ['thing say-to string-type thing'] = function (speaker, verb, msg, target) print(speaker.name .. ' says "' .. msg .. '" to ' .. target.name .. '.') end
              }

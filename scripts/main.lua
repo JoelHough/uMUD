@@ -4,8 +4,10 @@ require'functions'
 require'parser'
 require'binder'
 require'things'
-require'player'
-require'muderator'
+require'players'
+require'muderators'
+require'rooms'
+require'portals'
 
 function say(text)
    return got_player_text('God', text)
