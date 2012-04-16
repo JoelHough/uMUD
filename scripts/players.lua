@@ -1,7 +1,6 @@
 require'things'
 require'creatures'
-
-add_atoms{player='creature'}
+require'rooms'
 
 function add_player(id, data)
    if add_thing(id, data) then
@@ -9,3 +8,8 @@ function add_player(id, data)
       add_atoms{[id:lower()]='pronoun'}
    end
 end
+
+add_atoms{player='creature'}
+add_function{
+   ['player look room'] = function (player, verb, room_phrase) print(player.container.long_desc) end
+            }
