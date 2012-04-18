@@ -7,7 +7,7 @@ using namespace std;
 dBase::dBase()
 {
     db = NULL;
-    open("/home/bailey/mud.db");//a constant. set this method will also set the value of the db file name
+    open("/tmp/mud.db");//a constant. set this method will also set the value of the db file name
 
 }
 
@@ -73,7 +73,7 @@ vector<vector<string> > dBase::query(const char* query)
     }
 
     string error = sqlite3_errmsg(db);
-    if(error != "not an error") cout << query << " " << error << endl;
+    if(error != "not an error") cout << query << " from dBase->query " << error << endl;
 
     return results;
 }
@@ -85,7 +85,8 @@ void dBase::close()
 
 bool dBase::initialize()
 {
-    query("CREATE TABLE users (Name varchar(20), Password varchar(20));");
+    query("CREATE TABLE Players (Name varchar(20), Password varchar(20));");
+    return true;
 }
 
 bool dBase::queryLogin(string name, string password)

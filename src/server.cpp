@@ -20,13 +20,13 @@ warranty, and with no claim as to its suitability for any purpose.
 */
 
 
-							  
 
-							 
+
+
 
 
 /*
- *added the database code to handle at least logging on have added 
+ *added the database code to handle at least logging on have added
  * code is commented with a -C to make it easier to fi*nd
   * -C
   */
@@ -58,20 +58,28 @@ warranty, and with no claim as to its suitability for any purpose.
 #include <stdio.h>
 #include <typeinfo>
 
+
 //include the new class header file -C
 #include "dbase.h"
+
+//including the lua libraries -C
+extern "C"{
+#include <lua.h>
+#include <lualib.h>
+#include <lauxlib.h>
+}
 
 
 
 /*
  * TO-DO
- * -- Process control characters OUT of all incoming messages! 
+ * -- Process control characters OUT of all incoming messages!
  * -- Check playrlist $ Same player canNOT log in more than once...
  *
  */
 
 
-							  
+
 
 
 using namespace std;
@@ -103,19 +111,20 @@ static fd_set out_set;
 static fd_set exc_set;
 
 static dBase *db;
+lua_State* L; //declare the global lua_state variable.
 
 
 /* connection states - add more to have more complex connection dialogs */
 typedef enum
 {
-  eAwaitingName,        // we want their player name
-  eAwaitingPassword,    // we want their old password
+    eAwaitingName,        // we want their player name
+    eAwaitingPassword,    // we want their old password
 
-  eAwaitingNewName,     // they have typed 'new' and are being asked for a new name
-  eAwaitingNewPassword, // we want a new password
-  eConfirmPassword,     // confirm the new password
+    eAwaitingNewName,     // they have typed 'new' and are being asked for a new name
+    eAwaitingNewPassword, // we want a new password
+    eConfirmPassword,     // confirm the new password
 
-  ePlaying              // this is the normal 'connected' mode
+    ePlaying              // this is the normal 'connected' mode
 } tConnectionStates;
 
 
@@ -126,60 +135,60 @@ typedef enum
 class Player
 {
 private:
-  int s;              // socket they connected on
-  int port;           // port they connected on
+    int s;              // socket they connected on
+    int port;           // port they connected on
 
-  string outbuf;      // pending output
-  string inbuf;       // pending input
-  string address;     // address player is from
+    string outbuf;      // pending output
+    string inbuf;       // pending input
+    string address;     // address player is from
 
 public:
-  tConnectionStates connstate;      /* connection state */
-  string prompt;      // the current prompt
-  string name;  // player name
-  string password;    // their password
-  bool is_new_player;
-  bool logged_in;
-  int loginCount;
+    tConnectionStates connstate;      /* connection state */
+    string prompt;      // the current prompt
+    string name;  // player name
+    string password;    // their password
+    bool is_new_player;
+    bool logged_in;
+    int loginCount;
 
-  bool closing;     // true if they are about to leave us
+    bool closing;     // true if they are about to leave us
 
-  Player (const int sock, const int p, const string a)
-    : s (sock), port (p), address (a), closing (false)
-  { Init (); } // ctor
+    Player (const int sock, const int p, const string a)
+        : s (sock), port (p), address (a), closing (false)
+    { Init (); } // ctor
 
-  ~Player () // dtor
-  {
-    ProcessWrite ();    // send outstanding text
-    if (s != NO_SOCKET) /* close connection if active */
-      close (s);
-  };
-
-  void Init ()
+    ~Player () // dtor
     {
-      closing = false;
-      logged_in = false;
-      loginCount = 0;
-      connstate = eAwaitingName;
+        ProcessWrite ();    // send outstanding text
+        if (s != NO_SOCKET) /* close connection if active */
+            close (s);
+    };
+
+    void Init ()
+    {
+        closing = false;
+        logged_in = false;
+        loginCount = 0;
+        connstate = eAwaitingName;
     }
 
-  // Check Login Status
-  bool IsLoggedIn() const { return logged_in; }
-  // what's our socket?
-  int GetSocket () const { return s; }
-  // true if connected at all
-  bool Connected () const { return s != NO_SOCKET; }
-  // true if we have something to send them
-  bool PendingOutput () const { return !outbuf.empty (); }
-  bool IsValidName(string n);
-  bool IsValidPassword(bool newPlayer, string name, string p);
-  string Name()  { return this->name; }
+    // Check Login Status
+    bool IsLoggedIn() const { return logged_in; }
+    // what's our socket?
+    int GetSocket () const { return s; }
+    // true if connected at all
+    bool Connected () const { return s != NO_SOCKET; }
+    // true if we have something to send them
+    bool PendingOutput () const { return !outbuf.empty (); }
+    bool IsValidName(string n);
+    bool IsValidPassword(bool newPlayer, string name, string p);
+    string Name()  { return this->name; }
 
-  void SetName(string str)  { this->name = str; }
-  void SetPassword(string str)  { this->password = str; }
-  void ProcessRead ();    // get player input
-  void ProcessWrite ();   // output outstanding text
-  void ProcessException (); // exception on socket
+    void SetName(string str)  { this->name = str; }
+    void SetPassword(string str)  { this->password = str; }
+    void ProcessRead ();    // get player input
+    void ProcessWrite ();   // output outstanding text
+    void ProcessException (); // exception on socket
 };
 
 // player list type
@@ -188,21 +197,21 @@ typedef PlayerList::iterator PlayerListIterator;
 
 /*
  * <Utility Function>
- * Takes in a reference to a string and erases all 
+ * Takes in a reference to a string and erases all
  * non-alphanumeric characters.
  */
 static void EraseWhitespaces(string &str)
 {
-  for (size_t i = 0; i < str.size(); i++)
+    for (size_t i = 0; i < str.size(); i++)
     {
-      if (!isalpha(str[i]))
-	{
-	  if (str[i] == ' ' || str[i] == '\n' || str[i] == '\t'
-	      || str[i] == '\r')
-	    {
-	      str.erase(i,1);
-	    }
-	}
+        if (!isalpha(str[i]))
+        {
+            if (str[i] == ' ' || str[i] == '\n' || str[i] == '\t'
+                    || str[i] == '\r')
+            {
+                str.erase(i,1);
+            }
+        }
     }
 }
 
@@ -214,35 +223,35 @@ std::vector<Player *> playerList;
 /* Here when a signal is raised */
 void bailout (int sig)
 {
-  //cout << "**** Terminated by player on signal " << sig << " ****" << endl << endl;
-  bStopNow = true;
+    //cout << "**** Terminated by player on signal " << sig << " ****" << endl << endl;
+    bStopNow = true;
 } /* end of bailout */
 
 /*
  * Tokenizes a parameter string (str) by whitespace
  * and returns a vector of delmited substring tokens.
- */ 
+ */
 vector<string>* Tokenize(string str)
 {
-  //cerr << "Tokenize has --> " << str << endl;
+    //cerr << "Tokenize has --> " << str << endl;
 
-  vector<string> *tokens = new vector<string>();
+    vector<string> *tokens = new vector<string>();
 
-  int previous_space = 0;
-  for (int i = 0; i < str.size(); i++)
+    int previous_space = 0;
+    for (int i = 0; i < str.size(); i++)
     {
-      if (str[i] == ' ')
-	{
-	  string s = str.substr(previous_space, (i - previous_space));
-	  EraseWhitespaces(s);
-	  //cerr << "<token>: " << s << endl;
+        if (str[i] == ' ')
+        {
+            string s = str.substr(previous_space, (i - previous_space));
+            EraseWhitespaces(s);
+            //cerr << "<token>: " << s << endl;
 
-	  previous_space = i;
-	  tokens->push_back(s);
-	}
+            previous_space = i;
+            tokens->push_back(s);
+        }
     }
 
-  return tokens;
+    return tokens;
 }
 
 
@@ -258,74 +267,74 @@ vector<string>* Tokenize(string str)
  */
 vector<string>* IsTellToPlayer(string msg)
 {
-  //cerr << "<IsTellToPlayer> with " << msg << endl;
+    //cerr << "<IsTellToPlayer> with " << msg << endl;
 
-  vector<string> *tell_vector = new vector<string>;
-  //cerr << "Is Tell? msg(0,6) = " << msg.substr(0,6) << endl;
-  //cerr << "Contains \"tell\"? -- " << msg.substr(0,6).find("tell") << endl;
-  //cerr << "string::npos = " << string::npos << endl;
-  
-  // If the TELL cmd is in the right place...
-  if (msg.substr(0,6).find("tell") != string::npos)
+    vector<string> *tell_vector = new vector<string>;
+    //cerr << "Is Tell? msg(0,6) = " << msg.substr(0,6) << endl;
+    //cerr << "Contains \"tell\"? -- " << msg.substr(0,6).find("tell") << endl;
+    //cerr << "string::npos = " << string::npos << endl;
+
+    // If the TELL cmd is in the right place...
+    if (msg.substr(0,6).find("tell") != string::npos)
     {
-      // Tokenize by spaces $ Tell [name] [message to 'name']
-      vector<string> *tokens = Tokenize(msg);
+        // Tokenize by spaces $ Tell [name] [message to 'name']
+        vector<string> *tokens = Tokenize(msg);
 
-      // IS a tell cmd
-      tell_vector->push_back("yes");
-      // Name of target player
-      string Name = tokens->at(1);
-      EraseWhitespaces(Name);
-      tell_vector->push_back(Name);
-      // Set message
-      /* Need to amalgamate ALL the remaining tokens.... */
-      string message = "";
-      vector<string>::iterator it;
-      for (it = tokens->begin()+2; it != tokens->end(); ++it)
-	{
-	  //cerr << "Tokens: " << (*it) << endl;
-	  message += (*it);
-	  message += " ";
-	}
+        // IS a tell cmd
+        tell_vector->push_back("yes");
+        // Name of target player
+        string Name = tokens->at(1);
+        EraseWhitespaces(Name);
+        tell_vector->push_back(Name);
+        // Set message
+        /* Need to amalgamate ALL the remaining tokens.... */
+        string message = "";
+        vector<string>::iterator it;
+        for (it = tokens->begin()+2; it != tokens->end(); ++it)
+        {
+            //cerr << "Tokens: " << (*it) << endl;
+            message += (*it);
+            message += " ";
+        }
 
-      tell_vector->push_back(message);
+        tell_vector->push_back(message);
     }
- else // NOT a tell command
-   {
-     tell_vector->push_back("no");
-   }
+    else // NOT a tell command
+    {
+        tell_vector->push_back("no");
+    }
 
-return tell_vector;
+    return tell_vector;
 }
 
 vector<string>* IsWorldMessage(string msg)
 {
-  vector<string> *broadcast = new vector<string>;
-  
-  // If the TELL cmd is in the right place...
-  if (msg.substr(0,10).find("broadcast") != string::npos)
+    vector<string> *broadcast = new vector<string>;
+
+    // If the TELL cmd is in the right place...
+    if (msg.substr(0,10).find("broadcast") != string::npos)
     {
-      // Tokenize by spaces $ Tell [name] [message to 'name']
-      vector<string> *tokens = Tokenize(msg);
+        // Tokenize by spaces $ Tell [name] [message to 'name']
+        vector<string> *tokens = Tokenize(msg);
 
-      // Set message
-      /* Need to amalgamate ALL the remaining tokens.... */
-      string message = "";
-      vector<string>::iterator it;
-      for (it = tokens->begin()+1; it != tokens->end(); ++it)
-	{
-	  //cerr << "B_Tokens: " << (*it) << endl;
-	  message += (*it);
-	  message += " ";
-	}
+        // Set message
+        /* Need to amalgamate ALL the remaining tokens.... */
+        string message = "";
+        vector<string>::iterator it;
+        for (it = tokens->begin()+1; it != tokens->end(); ++it)
+        {
+            //cerr << "B_Tokens: " << (*it) << endl;
+            message += (*it);
+            message += " ";
+        }
 
-      //cerr << "<Broadcast Msg>: " << message << endl;
+        //cerr << "<Broadcast Msg>: " << message << endl;
 
-      broadcast->push_back(message);
+        broadcast->push_back(message);
     }
 
 
-  return broadcast;
+    return broadcast;
 }
 
 /*
@@ -335,59 +344,59 @@ vector<string>* IsWorldMessage(string msg)
  */
 Player* GetTargetPlayer(string n)
 {
-  Player *p = NULL;
+    Player *p = NULL;
 
-  //cerr << "Get the Player \"" << n << "\"" << endl;
+    //cerr << "Get the Player \"" << n << "\"" << endl;
 
-  for (int i = 0; i < playerList.size(); i++)
+    for (int i = 0; i < playerList.size(); i++)
     {
-      /* DEBUG -- What's in the playerList here? */
-      //cerr << "PlayerList(i) = \"" << playerList.at(i)->Name() <<"\""<< endl;
-      //cerr << "PlayerList(i).compare(name) = " << 
-      //playerList.at(i)->Name().compare(n) << endl;
+        /* DEBUG -- What's in the playerList here? */
+        //cerr << "PlayerList(i) = \"" << playerList.at(i)->Name() <<"\""<< endl;
+        //cerr << "PlayerList(i).compare(name) = " <<
+        //playerList.at(i)->Name().compare(n) << endl;
 
-      if (playerList.at(i)->Name().compare(n) == 0)
-	{
-	  //cerr << "<Target Confirmed>" << endl;
-	  p = playerList.at(i);
-	}
+        if (playerList.at(i)->Name().compare(n) == 0)
+        {
+            //cerr << "<Target Confirmed>" << endl;
+            p = playerList.at(i);
+        }
     }
 
-  return p;
+    return p;
 }
 
 
 void TryToTellPlayer(Player *p, vector<string> *input)
 {
-  /* CODE: Tell to the player in msg! */
-  // Is the player online/available?
-  string targetName = input->at(1);
-  Player *target = GetTargetPlayer(targetName);
+    /* CODE: Tell to the player in msg! */
+    // Is the player online/available?
+    string targetName = input->at(1);
+    Player *target = GetTargetPlayer(targetName);
 
-  if (target) // NON-Null target player -- Send Tell!
+    if (target) // NON-Null target player -- Send Tell!
     {
-      string says = "(" + p->Name() + "): " + input->at(2) + "\n";
-      const char *tell = says.c_str();
-      write(target->GetSocket(), tell, says.size());
+        string says = "(" + p->Name() + "): " + input->at(2) + "\n";
+        const char *tell = says.c_str();
+        write(target->GetSocket(), tell, says.size());
     }
-  else  // Player either does not exist OR is offline -- inform sender
+    else  // Player either does not exist OR is offline -- inform sender
     {
-      string playerNotFound = "Uh oh! That player is not online!\n";
-      const char *inform = playerNotFound.c_str();
-      write(p->GetSocket(), inform, playerNotFound.size());
+        string playerNotFound = "Uh oh! That player is not online!\n";
+        const char *inform = playerNotFound.c_str();
+        write(p->GetSocket(), inform, playerNotFound.size());
     }
 }
 
 void MakeWorldBroadcast(vector<string> *world_message)
 {
-  string msg = "<WorldMessage>: " + world_message->at(0) + "\n";
-  const char *cast = msg.c_str();
-  
-  //cerr << "...making world broadcast of \""<<msg<<"\""<<endl;
+    string msg = "<WorldMessage>: " + world_message->at(0) + "\n";
+    const char *cast = msg.c_str();
 
-  for (int i = 0; i < playerList.size(); i++)
+    //cerr << "...making world broadcast of \""<<msg<<"\""<<endl;
+
+    for (int i = 0; i < playerList.size(); i++)
     {
-      write((playerList.at(i))->GetSocket(), cast, msg.size());
+        write((playerList.at(i))->GetSocket(), cast, msg.size());
     }
 }
 
@@ -395,72 +404,72 @@ void MakeWorldBroadcast(vector<string> *world_message)
 /* set up comms - get ready to listen for connection */
 int InitComms ()
 {
-  struct sockaddr_in sa;
+    struct sockaddr_in sa;
 
-  try
+    try
     {
-      // Create the control socket
-      if ( (iControl = socket (AF_INET, SOCK_STREAM, 0)) == -1)
-	throw runtime_error ("creating control socket");
+        // Create the control socket
+        if ( (iControl = socket (AF_INET, SOCK_STREAM, 0)) == -1)
+            throw runtime_error ("creating control socket");
 
-      // make sure socket doesn't block
-      if (fcntl( iControl, F_SETFL, FNDELAY ) == -1)
-	throw runtime_error ("fcntl on control socket");
+        // make sure socket doesn't block
+        if (fcntl( iControl, F_SETFL, FNDELAY ) == -1)
+            throw runtime_error ("fcntl on control socket");
 
-      struct linger ld = linger ();  // zero it
+        struct linger ld = linger ();  // zero it
 
-      // Don't allow closed sockets to linger
-      if (setsockopt( iControl, SOL_SOCKET, SO_LINGER,
-		      (char *) &ld, sizeof ld ) == -1)
-	throw runtime_error ("setsockopt (SO_LINGER)");
+        // Don't allow closed sockets to linger
+        if (setsockopt( iControl, SOL_SOCKET, SO_LINGER,
+                        (char *) &ld, sizeof ld ) == -1)
+            throw runtime_error ("setsockopt (SO_LINGER)");
 
-      int x = 1;
+        int x = 1;
 
-      // Allow address reuse
-      if (setsockopt( iControl, SOL_SOCKET, SO_REUSEADDR,
-		      (char *) &x, sizeof x ) == -1)
-	throw runtime_error ("setsockopt (SO_REUSEADDR)");
+        // Allow address reuse
+        if (setsockopt( iControl, SOL_SOCKET, SO_REUSEADDR,
+                        (char *) &x, sizeof x ) == -1)
+            throw runtime_error ("setsockopt (SO_REUSEADDR)");
 
-      sa.sin_family       = AF_INET;
-      sa.sin_port         = htons (PORT);
-      sa.sin_addr.s_addr  = INADDR_ANY;   /* change to listen on a specific adapter */
+        sa.sin_family       = AF_INET;
+        sa.sin_port         = htons (PORT);
+        sa.sin_addr.s_addr  = INADDR_ANY;   /* change to listen on a specific adapter */
 
-      // bind the socket to our connection port
-      if ( bind (iControl, (struct sockaddr *) &sa, sizeof sa) == -1)
-	throw runtime_error ("bind");
+        // bind the socket to our connection port
+        if ( bind (iControl, (struct sockaddr *) &sa, sizeof sa) == -1)
+            throw runtime_error ("bind");
 
-      // listen for connections
-      if (listen (iControl, SOMAXCONN) == -1)  // SOMAXCONN is the backlog count
-	throw runtime_error ("listen");
+        // listen for connections
+        if (listen (iControl, SOMAXCONN) == -1)  // SOMAXCONN is the backlog count
+            throw runtime_error ("listen");
 
-      tLastMessage = time (NULL);
+        tLastMessage = time (NULL);
     }  // end of try block
 
-  // problem?
-  catch (runtime_error & e)
+    // problem?
+    catch (runtime_error & e)
     {
-      cerr << PROMPT << "Cannot initialise comms ..." << endl;
-      perror (e.what ());
-      return 1;
+        cerr << PROMPT << "Cannot initialise comms ..." << endl;
+        perror (e.what ());
+        return 1;
     }
 
-  // standard termination signals
-  signal (SIGINT,  bailout);
-  signal (SIGTERM, bailout);
-  signal (SIGHUP,  bailout);
+    // standard termination signals
+    signal (SIGINT,  bailout);
+    signal (SIGTERM, bailout);
+    signal (SIGHUP,  bailout);
 
-  return 0;
+    return 0;
 }   /* end of InitComms */
 
 
 /* close listening port */
 void CloseComms ()
 {
-  cerr << "Closing all comms connections." << endl;
+    cerr << "Closing all comms connections." << endl;
 
-  // close listening socket
-  if (iControl != NO_SOCKET)
-    close (iControl);
+    // close listening socket
+    if (iControl != NO_SOCKET)
+        close (iControl);
 
 } /* end of CloseComms */
 
@@ -480,161 +489,161 @@ void RemoveInactivePlayers (string n);
  */
 void ActOnPlayerInput(Player *p, string msg)
 {
-  // ********************
-  // <CURRENTLY: Does NOT work until user is logged in***>
-  // See if player wants to Disconnect...
-  vector<string> *input = IsTellToPlayer((msg + " "));
-  vector<string> *broadcast = IsWorldMessage(msg + " ");
+    // ********************
+    // <CURRENTLY: Does NOT work until user is logged in***>
+    // See if player wants to Disconnect...
+    vector<string> *input = IsTellToPlayer((msg + " "));
+    vector<string> *broadcast = IsWorldMessage(msg + " ");
 
-  cerr << "input.size() = " << input->size() << endl;
-  cerr << "broadcast.size() = " << broadcast->size() << endl;
+    cerr << "input.size() = " << input->size() << endl;
+    cerr << "broadcast.size() = " << broadcast->size() << endl;
 
-  if (msg.find("disconnect") != string::npos)
+    if (msg.find("disconnect") != string::npos)
     {
-      string goodbye = PROMPT + "Goodbye " + p->Name() + "\n";
-      const char *bye_msg = goodbye.c_str();
-      write(p->GetSocket(), bye_msg, goodbye.size());
-      p->closing = true;
-      // Remove anyone that's left from the playerList
-      close(p->GetSocket()); // Close the Socket
-      RemoveInactivePlayers(p->Name());
+        string goodbye = PROMPT + "Goodbye " + p->Name() + "\n";
+        const char *bye_msg = goodbye.c_str();
+        write(p->GetSocket(), bye_msg, goodbye.size());
+        p->closing = true;
+        // Remove anyone that's left from the playerList
+        close(p->GetSocket()); // Close the Socket
+        RemoveInactivePlayers(p->Name());
     }
-  /* TEST IMPL 1: Echo Client Messages! */
-  // THE BELOW FUNCTIONS CAN BE SOMEWHAT COMBNIED TO MORE
-  // BETTER CODED.....
-  else if (input->size() > 1 && broadcast->size() < 1)
+    /* TEST IMPL 1: Echo Client Messages! */
+    // THE BELOW FUNCTIONS CAN BE SOMEWHAT COMBNIED TO MORE
+    // BETTER CODED.....
+    else if (input->size() > 1 && broadcast->size() < 1)
     {
-      TryToTellPlayer(p, input);
+        TryToTellPlayer(p, input);
     }
-  else if (broadcast->size() >= 1)
+    else if (broadcast->size() >= 1)
     {
-      MakeWorldBroadcast(broadcast);
+        MakeWorldBroadcast(broadcast);
     }
-  else
+    else
     {
-      msg = PROMPT + "Echo: " + msg + "\n";
-      const char *echo = msg.c_str();
-      write(p->GetSocket(), echo, msg.size());
+        msg = PROMPT + "Echo: " + msg + "\n";
+        const char *echo = msg.c_str();
+        write(p->GetSocket(), echo, msg.size());
     }
 }
 
 
 void ProcessPlayerInput (Player * p, const string & s)
 {
-  /* DEBUG -- Print received messages! */
-  //cerr << "MSG: " << s << endl;
+    /* DEBUG -- Print received messages! */
+    //cerr << "MSG: " << s << endl;
 
-  /*
+    /*
    * TO-DO IMPLEMENTATION
    * --> Handle Login messages (how to tell? bool flag?)
    *    > Set Player.logged_in to TRUE when logged in,
    * --> Handle normal chat (echo...)
    */
-  try
+    try
     {
-      string msg = s;
-      //cerr << "Process Input -- " << s << endl;
+        string msg = s;
+        //cerr << "Process Input -- " << s << endl;
 
-      if (!p->IsLoggedIn())
-	{
-	  //if (p->loginCount == 0 && IsValidName(s))
-	  if (p->loginCount == 0)
-	    {
-	      bool newName = !p->IsValidName(s); // True -- NOT new
+        if (!p->IsLoggedIn())
+        {
+            //if (p->loginCount == 0 && IsValidName(s))
+            if (p->loginCount == 0)
+            {
+                bool newName = !p->IsValidName(s); // True -- NOT new
 
-	      // False -- new
-	      if (newName)
-		{
-		  //cerr << "<NEW PLAYER>" << endl;
-		  p->is_new_player = true;
+                // False -- new
+                if (newName)
+                {
+                    //cerr << "<NEW PLAYER>" << endl;
+                    p->is_new_player = true;
 
-		}
-	      else // NOT a New player...
-		{
-		  //cerr << "<EXISTING PLAYER>" << endl;
-		  p->is_new_player = false;
-		}
+                }
+                else // NOT a New player...
+                {
+                    //cerr << "<EXISTING PLAYER>" << endl;
+                    p->is_new_player = false;
+                }
 
-	      //EraseNonAlphas(msg)
-	      EraseWhitespaces(msg);
-	      p->SetName(msg);
-	      p->loginCount++;
-	    }
-	  else if (p->loginCount == 1)
-	    {
-	      bool valid_pwd = p->IsValidPassword(p->is_new_player, p->name, s);
+                //EraseNonAlphas(msg)
+                EraseWhitespaces(msg);
+                p->SetName(msg);
+                p->loginCount++;
+            }
+            else if (p->loginCount == 1)
+            {
+                bool valid_pwd = p->IsValidPassword(p->is_new_player, p->name, s);
 
-	      //cerr << "Valid Password ~ " << valid_pwd << endl;
+                //cerr << "Valid Password ~ " << valid_pwd << endl;
 
-	      if (valid_pwd)
-		{
-		  EraseWhitespaces(msg);
-		  p->SetPassword(msg);
-		  p->loginCount++;
-		  p->logged_in = true;
+                if (valid_pwd)
+                {
+                    EraseWhitespaces(msg);
+                    p->SetPassword(msg);
+                    p->loginCount++;
+                    p->logged_in = true;
 
-		  // Write out Successful_Login message!
-		  string successful_login;
-		  if (!p->is_new_player)
-		    successful_login = ">>>> Welcome back " + p->Name() + "\n";
-		  else
-		    successful_login = ">>>> Welcome " + p->Name() + "\n";
-		  const char *success = successful_login.c_str();
+                    // Write out Successful_Login message!
+                    string successful_login;
+                    if (!p->is_new_player)
+                        successful_login = ">>>> Welcome back " + p->Name() + "\n";
+                    else
+                        successful_login = ">>>> Welcome " + p->Name() + "\n";
+                    const char *success = successful_login.c_str();
 
-		  write(p->GetSocket(), success, successful_login.size());
-		}
-	      else // Invalid Password! --> Set for new player, re-prompt for
-		// existing player
-		{
-		  if (p->is_new_player) // Set new player's password...
-		    {
-		      /* <SQLite Stuff> */
+                    write(p->GetSocket(), success, successful_login.size());
+                }
+                else // Invalid Password! --> Set for new player, re-prompt for
+                    // existing player
+                {
+                    if (p->is_new_player) // Set new player's password...
+                    {
+                        /* <SQLite Stuff> */
 
-		      //EraseNonAlphas(s)
-		      p->SetPassword(msg);
-		      p->loginCount++;
-		      p->logged_in = true;
-		      
-		      //will add a player/pwd combination into the database
-		      //probably needs to be tweeked bailey -C
-		      // *******************************
-		      db->newUser(p->name, p->password);  
-		      // *******************************
+                        //EraseNonAlphas(s)
+                        p->SetPassword(msg);
+                        p->loginCount++;
+                        p->logged_in = true;
 
-		      // Write out Successful_Login message!
-		      string successful_login = ">>>> Welcome " + p->Name() + "\n";
-		      const char *success = successful_login.c_str();
-		      write(p->GetSocket(), success, successful_login.size());
-		    }
-		  else /* Re-Prompt for login! */
-		    {
-		      //  Login Prompt
-		      string invalid = PROMPT + "No one is sorry, but that is the wrong password for " + p->Name() + "\n";
-		      const char *wrong_pwd = invalid.c_str();
-		      write(p->GetSocket(), wrong_pwd, invalid.size());
-		      const char *login_req = login_request.c_str();
-		      write(p->GetSocket(), login_req, login_request.size());
+                        //will add a player/pwd combination into the database
+                        //probably needs to be tweeked bailey -C
+                        // *******************************
+                        db->newUser(p->name, p->password);
+                        // *******************************
 
-		      // Reset Login Vars
-		      p->loginCount = 0;
-		      p->SetName("");
-		      p->SetPassword("");
-		    }
-		}
-	    }
-	}
-      else // Player IS logged in --> Handle Normal InGame Input!
-	{
-	  ActOnPlayerInput(p, msg);
-	}
+                        // Write out Successful_Login message!
+                        string successful_login = ">>>> Welcome " + p->Name() + "\n";
+                        const char *success = successful_login.c_str();
+                        write(p->GetSocket(), success, successful_login.size());
+                    }
+                    else /* Re-Prompt for login! */
+                    {
+                        //  Login Prompt
+                        string invalid = PROMPT + "No one is sorry, but that is the wrong password for " + p->Name() + "\n";
+                        const char *wrong_pwd = invalid.c_str();
+                        write(p->GetSocket(), wrong_pwd, invalid.size());
+                        const char *login_req = login_request.c_str();
+                        write(p->GetSocket(), login_req, login_request.size());
+
+                        // Reset Login Vars
+                        p->loginCount = 0;
+                        p->SetName("");
+                        p->SetPassword("");
+                    }
+                }
+            }
+        }
+        else // Player IS logged in --> Handle Normal InGame Input!
+        {
+            ActOnPlayerInput(p, msg);
+        }
     } // end of try block
 
-  // all errors during input processing will be caught here
-  catch (runtime_error & e)
+    // all errors during input processing will be caught here
+    catch (runtime_error & e)
     {
-      string err = e.what();
-      const char *error = err.c_str();
-      write(p->GetSocket(), error, err.size());
+        string err = e.what();
+        const char *error = err.c_str();
+        write(p->GetSocket(), error, err.size());
     }
 } /* end of ProcessPlayerInput */
 
@@ -646,27 +655,27 @@ void ProcessPlayerInput (Player * p, const string & s)
  */
 bool Player::IsValidName(string name)
 {
-  /* SQLite stuff here... */
-  string s1("SELECT Name FROM Players WHERE Name = '");
-  string s2("'");
-  // Make sure only alpha-characters have been passed -- else erase those
-  EraseWhitespaces(name);
+    /* SQLite stuff here... */
+    string s1("SELECT Name FROM Players WHERE Name = '");
+    string s2("'");
+    // Make sure only alpha-characters have been passed -- else erase those
+    EraseWhitespaces(name);
 
-  string s = s1 + name + s2;
-  const char *Q = s.c_str();
-  //cerr << "Q --> " << Q << endl;
-  vector< vector<string> > results = db->query(Q);
+    string s = s1 + name + s2;
+    const char *Q = s.c_str();
+    //cerr << "Q --> " << Q << endl;
+    vector< vector<string> > results = db->query(Q);
 
-  // Was the Player's name already in the DB?
-  if (results.size() < 1)
+    // Was the Player's name already in the DB?
+    if (results.size() < 1)
     {
-      //cerr << "New Player Name EXCITING" << endl;
-      return false;
+        //cerr << "New Player Name EXCITING" << endl;
+        return false;
     }
-  else
+    else
     {
-      //cerr << "Player Already Exists" << endl;
-      return true;
+        //cerr << "Player Already Exists" << endl;
+        return true;
     }
 }
 
@@ -679,25 +688,25 @@ bool Player::IsValidName(string name)
  */
 bool Player::IsValidPassword(bool is_new_player, string name, string pwd)
 {
-   /* SQLite stuff here... */
-  string s1("SELECT Password FROM Players WHERE Password = '");
-  string s2("'");
-  // Make sure only alpha-characters have been passed -- else erase those
-  EraseWhitespaces(pwd);
+    /* SQLite stuff here... */
+    string s1("SELECT Password FROM Players WHERE Password = '");
+    string s2("'");
+    // Make sure only alpha-characters have been passed -- else erase those
+    EraseWhitespaces(pwd);
 
-  string s = s1 + pwd + s2;
-  const char *Q = s.c_str();
-  //cerr << "Q --> " << Q << endl;
-  vector< vector<string> > results = db->query(Q);
+    string s = s1 + pwd + s2;
+    const char *Q = s.c_str();
+    //cerr << "Q --> " << Q << endl;
+    vector< vector<string> > results = db->query(Q);
 
-  // Consider password validity -- is it wrong or a new player's?
-  if (results.size() < 1)
+    // Consider password validity -- is it wrong or a new player's?
+    if (results.size() < 1)
     {
-      return false;
+        return false;
     }
-  else // Password WAS found
+    else // Password WAS found
     {
-      return true;
+        return true;
     }
 }
 
@@ -705,49 +714,49 @@ bool Player::IsValidPassword(bool is_new_player, string name, string pwd)
 /* new player has connected */
 void ProcessNewConnection ()
 {
-  static struct sockaddr_in sa;
-  socklen_t sa_len = sizeof sa;
+    static struct sockaddr_in sa;
+    socklen_t sa_len = sizeof sa;
 
-  int s;    /* incoming socket */
+    int s;    /* incoming socket */
 
-  /* loop until all outstanding connections are accepted */
-  while (true)
+    /* loop until all outstanding connections are accepted */
+    while (true)
     {
-      s = accept ( iControl, (struct sockaddr *) &sa, &sa_len);
+        s = accept ( iControl, (struct sockaddr *) &sa, &sa_len);
 
-      /* a bad socket probably means no more connections are outstanding */
-      if (s == NO_SOCKET)
-	{
+        /* a bad socket probably means no more connections are outstanding */
+        if (s == NO_SOCKET)
+        {
 
-	  /* blocking is OK - we have accepted all outstanding connections */
-	  if ( errno == EWOULDBLOCK )
-	    return;
+            /* blocking is OK - we have accepted all outstanding connections */
+            if ( errno == EWOULDBLOCK )
+                return;
 
-	  perror ("accept");
-	  return;
-	}
+            perror ("accept");
+            return;
+        }
 
-      /* here on successful accept - make sure socket doesn't block */
-      if (fcntl (s, F_SETFL, FNDELAY) == -1)
-	{
-	  perror ("fcntl on player socket");
-	  return;
-	}
+        /* here on successful accept - make sure socket doesn't block */
+        if (fcntl (s, F_SETFL, FNDELAY) == -1)
+        {
+            perror ("fcntl on player socket");
+            return;
+        }
 
-      string address = inet_ntoa ( sa.sin_addr);
-      int port = ntohs (sa.sin_port);
+        string address = inet_ntoa ( sa.sin_addr);
+        int port = ntohs (sa.sin_port);
 
-      Player * p = new Player (s, port, address);
-      playerList.push_back (p);
+        Player * p = new Player (s, port, address);
+        playerList.push_back (p);
 
-      cout << PROMPT << "New player accepted on socket " << s <<
-	", from address " << address << ", port " << port << endl;
+        cout << PROMPT << "New player accepted on socket " << s <<
+                ", from address " << address << ", port " << port << endl;
 
-      // Send Welcome Message & Login Request
-      const char *welcome = welcome_msg.c_str();
-      write(p->GetSocket(), welcome, welcome_msg.size());
-      const char *login_req = login_request.c_str();
-      write(p->GetSocket(), login_req, login_request.size());
+        // Send Welcome Message & Login Request
+        const char *welcome = welcome_msg.c_str();
+        write(p->GetSocket(), welcome, welcome_msg.size());
+        const char *login_req = login_request.c_str();
+        write(p->GetSocket(), login_req, login_request.size());
 
     } /* end of processing *all* new connections */
 } /* end of ProcessNewConnection */
@@ -756,42 +765,42 @@ void ProcessNewConnection ()
 /* Here when there is outstanding data to be read for this player */
 void Player::ProcessRead ()
 {
-  // I make it static to save allocating a buffer each time.
-  // Hopefully this function won't be called recursively.
-  static vector<char> buf (1000);  // reserve 1000 bytes for reading into
+    // I make it static to save allocating a buffer each time.
+    // Hopefully this function won't be called recursively.
+    static vector<char> buf (1000);  // reserve 1000 bytes for reading into
 
-  int nRead = read (s, &buf [0], buf.size ());
+    int nRead = read (s, &buf [0], buf.size ());
 
-  if (nRead == -1)
+    if (nRead == -1)
     {
-      if (errno != EWOULDBLOCK)
-	perror ("read from player");
-      return;
+        if (errno != EWOULDBLOCK)
+            perror ("read from player");
+        return;
     }
 
-  if (nRead <= 0)
+    if (nRead <= 0)
     {
-      close (s);
-      cerr << "Connection " << s << " closed" << endl;
-      s = NO_SOCKET;
-      ProcessPlayerInput (this, "quit");  // tell others the s/he has left
-      return;
+        close (s);
+        cerr << "Connection " << s << " closed" << endl;
+        s = NO_SOCKET;
+        ProcessPlayerInput (this, "quit");  // tell others the s/he has left
+        return;
     }
 
-  inbuf += string (&buf [0], nRead);    /* add to input buffer */
+    inbuf += string (&buf [0], nRead);    /* add to input buffer */
 
-  /* try to extract lines from the input buffer */
-  for ( ; ; )
+    /* try to extract lines from the input buffer */
+    for ( ; ; )
     {
-      string::size_type i = inbuf.find ('\n');
-      if (i == string::npos)
-	break;  /* no more at present */
+        string::size_type i = inbuf.find ('\n');
+        if (i == string::npos)
+            break;  /* no more at present */
 
-      string sLine = inbuf.substr (0, i);  /* extract first line */
-      inbuf = inbuf.substr (i + 1, string::npos); /* get rest of string */
+        string sLine = inbuf.substr (0, i);  /* extract first line */
+        inbuf = inbuf.substr (i + 1, string::npos); /* get rest of string */
 
-      // Handle the message....
-      ProcessPlayerInput (this, sLine);  /* now, do something with it */
+        // Handle the message....
+        ProcessPlayerInput (this, sLine);  /* now, do something with it */
     }
 } /* end of tPlayer::ProcessRead */
 
@@ -801,30 +810,30 @@ void Player::ProcessRead ()
  go this time gets put into the list of outstanding strings for this player. */
 void Player::ProcessWrite ()
 {
-  /* we will loop attempting to write all in buffer, until write blocks */
-  while (s != NO_SOCKET && !outbuf.empty ())
+    /* we will loop attempting to write all in buffer, until write blocks */
+    while (s != NO_SOCKET && !outbuf.empty ())
     {
 
-      // send a maximum of 512 at a time
-      int iLength = min<int> (outbuf.size (), 512);
+        // send a maximum of 512 at a time
+        int iLength = min<int> (outbuf.size (), 512);
 
-      // send to player
-      int nWrite = write (s, outbuf.c_str (), iLength );
+        // send to player
+        int nWrite = write (s, outbuf.c_str (), iLength );
 
-      // check for bad write
-      if (nWrite < 0)
-    {
-      if (errno != EWOULDBLOCK )
-        perror ("send to player");  /* some other error? */
-      return;
-    }
+        // check for bad write
+        if (nWrite < 0)
+        {
+            if (errno != EWOULDBLOCK )
+                perror ("send to player");  /* some other error? */
+            return;
+        }
 
-      // remove what we successfully sent from the buffer
-      outbuf.erase (0, nWrite);
+        // remove what we successfully sent from the buffer
+        outbuf.erase (0, nWrite);
 
-      // if partial write, exit
-      if (nWrite < iLength)
-    break;
+        // if partial write, exit
+        if (nWrite < iLength)
+            break;
 
     } /* end of having write loop */
 
@@ -833,61 +842,61 @@ void Player::ProcessWrite ()
 // prepare for comms
 struct setUpDescriptors
 {
-  int iMaxdesc;
+    int iMaxdesc;
 
-  setUpDescriptors (const int i) : iMaxdesc (i) {}
+    setUpDescriptors (const int i) : iMaxdesc (i) {}
 
-  // check this player
-  void operator() (const Player * p)
-  {
-    /* don't bother if connection is closed */
-    if (p->Connected ())
-      {
-        iMaxdesc = max (iMaxdesc, p->GetSocket ());
-        // don't take input if they are closing down
-        //if (!p->closing)
-          {
-        FD_SET( p->GetSocket (), &in_set  );
-        FD_SET( p->GetSocket (), &exc_set );
-          }
-      } /* end of active player */
-  } // end of operator()
+    // check this player
+    void operator() (const Player * p)
+    {
+        /* don't bother if connection is closed */
+        if (p->Connected ())
+        {
+            iMaxdesc = max (iMaxdesc, p->GetSocket ());
+            // don't take input if they are closing down
+            //if (!p->closing)
+            {
+                FD_SET( p->GetSocket (), &in_set  );
+                FD_SET( p->GetSocket (), &exc_set );
+            }
+        } /* end of active player */
+    } // end of operator()
 
-  int GetMax () const { return iMaxdesc; }
+    int GetMax () const { return iMaxdesc; }
 
 };  // end of setUpDescriptors
 
 // handle comms
 struct processDescriptors
 {
-  // handle this player
-  void operator() (Player * p)
+    // handle this player
+    void operator() (Player * p)
     {
-      /* look for ones we can read from, provided they aren't closed */
-      if (p->Connected() && FD_ISSET (p->GetSocket (), &in_set) && !p->closing)
-        p->ProcessRead ();
+        /* look for ones we can read from, provided they aren't closed */
+        if (p->Connected() && FD_ISSET (p->GetSocket (), &in_set) && !p->closing)
+            p->ProcessRead ();
 
-      /* look for ones we can write to, provided they aren't closed */
-      if (p->Connected() && FD_ISSET (p->GetSocket (), &out_set) && !p->closing)
-        p->ProcessWrite ();
-     } // end of operator()
+        /* look for ones we can write to, provided they aren't closed */
+        if (p->Connected() && FD_ISSET (p->GetSocket (), &out_set) && !p->closing)
+            p->ProcessWrite ();
+    } // end of operator()
 
 };  // end of processDescriptors
 
 void RemoveInactivePlayers (string n)
 {
-  //for (PlayerListIterator i = playerList.begin (); i != playerList.end (); )
-  for (std::vector<Player *>::iterator i = playerList.begin();
-       i != playerList.end(); ++i)
+    //for (PlayerListIterator i = playerList.begin (); i != playerList.end (); )
+    for (std::vector<Player *>::iterator i = playerList.begin();
+         i != playerList.end(); ++i)
     {
-      //if (!(*i)->Connected ())        // no longer connected
-      if ((*i)->Name().compare(n) == 0)
-	{
-	  /* DEBUG */
-	  //cerr << "Erasing " << (*i)->Name() << endl;
-	  playerList.erase(i);
-	  return;
-	}
+        //if (!(*i)->Connected ())        // no longer connected
+        if ((*i)->Name().compare(n) == 0)
+        {
+            /* DEBUG */
+            //cerr << "Erasing " << (*i)->Name() << endl;
+            playerList.erase(i);
+            return;
+        }
     } /* end of looping through players */
 } // end of RemoveInactivePlayers
 
@@ -895,37 +904,37 @@ void RemoveInactivePlayers (string n)
 // main processing loop
 void MainLoop ()
 {
-  // loop processing input, output, events
-  do
+    // loop processing input, output, events
+    do
     {
-      // get ready for "select" function ...
-      FD_ZERO (&in_set);
-      FD_ZERO (&out_set);
-      FD_ZERO (&exc_set);
+        // get ready for "select" function ...
+        FD_ZERO (&in_set);
+        FD_ZERO (&out_set);
+        FD_ZERO (&exc_set);
 
-      // add our control socket (for new connections)
-      FD_SET (iControl, &in_set);
+        // add our control socket (for new connections)
+        FD_SET (iControl, &in_set);
 
-      // set bits in in_set, out_set etc. for each connected player
-      int iMaxdesc = for_each (playerList.begin (), playerList.end (),
-			       setUpDescriptors (iControl)).GetMax ();
+        // set bits in in_set, out_set etc. for each connected player
+        int iMaxdesc = for_each (playerList.begin (), playerList.end (),
+                                 setUpDescriptors (iControl)).GetMax ();
 
-      // set up timeout interval
-      struct timeval timeout;
-      timeout.tv_sec = COMMS_WAIT_SEC;    // seconds
-      timeout.tv_usec = COMMS_WAIT_USEC;  // + 1000th. of second
+        // set up timeout interval
+        struct timeval timeout;
+        timeout.tv_sec = COMMS_WAIT_SEC;    // seconds
+        timeout.tv_usec = COMMS_WAIT_USEC;  // + 1000th. of second
 
-      // check for activity, timeout after 'timeout' seconds
-      if (select (iMaxdesc + 1, &in_set, &out_set, &exc_set, &timeout) > 0)
-	{
-	  // New connection on control port?
-	  if (FD_ISSET (iControl, &in_set))
-	    ProcessNewConnection ();
+        // check for activity, timeout after 'timeout' seconds
+        if (select (iMaxdesc + 1, &in_set, &out_set, &exc_set, &timeout) > 0)
+        {
+            // New connection on control port?
+            if (FD_ISSET (iControl, &in_set))
+                ProcessNewConnection ();
 
-	  // handle all player input/output
-	  for_each (playerList.begin (), playerList.end (),
-		    processDescriptors ());
-	} // end of something happened
+            // handle all player input/output
+            for_each (playerList.begin (), playerList.end (),
+                      processDescriptors ());
+        } // end of something happened
 
     }  while (!bStopNow);   // end of looping processing input
 
@@ -933,24 +942,31 @@ void MainLoop ()
 
 
 
-
 // main program
 int main ()
 {
-  //may be a better place for this but for now create the database object here -C
-  db = new dBase();
-  db->initialize();
+    //may be a better place for this but for now create the database object here -C
+    db = new dBase();
+    db->initialize();
+    L = luaL_newstate(); //initialize the lua state to be used until the game shuts down.
 
-  cout << "Tiny MUD server version " << VERSION << endl;
+    luaL_openlibs(L); //open the libs. I think this will open them all.
+    if(luaL_dofile(L, "main.lua") != 0) // if there are no errors luaL_dofile() will rerturn 0
+    {
+        cerr << "there was an error with luaL_dofile in server.cpp line 954" << endl;
+    }
 
-  if (InitComms ()) // listen for new connections
-    return 1;
+    cout << "Tiny MUD server version " << VERSION << endl;
 
-  cout << "Accepting connections from port " <<  PORT << endl;
+    if (InitComms ()) // listen for new connections
+        return 1;
 
-  MainLoop ();    // handle player input/output
-  CloseComms ();  // stop listening
+    cout << "Accepting connections from port " <<  PORT << endl;
 
-  cout << "Game shut down." << endl;
-  return 0;
+    MainLoop ();    // handle player input/output
+    CloseComms ();  // stop listening
+
+    cout << "Game shut down." << endl;
+    lua_close(L); //close the lua state for we are done with it.
+    return 0;
 }   // end of main
