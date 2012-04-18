@@ -56,10 +56,16 @@ end
 -- From http://stackoverflow.com/questions/4934100/get-nested-table-result-in-lua
 function printTable(t, print_func)
    local f = print_func or print
+   local printed = {}
    function printTableHelper(t, spacing)
       for k,v in pairs(t) do
          if (type(v) == "table") then
             f(spacing..tostring(k))
+            if table.find(printed, t) then
+               f(spacing..'Recursive ' .. tostring(v))
+               return nil
+            end
+            table.insert(printed, v)
             printTableHelper(v, spacing.."  ")
             --f(spacing..'} //' .. tostring(k))
          else
