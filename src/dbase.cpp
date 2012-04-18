@@ -85,23 +85,25 @@ void dBase::close()
 
 bool dBase::initialize()
 {
-    //----Modification by James Murdock 20120418----
-    query_user("CREATE TABLE IF NOT EXISTS Players("+
-            "user_id INTEGER,"+ 
-            "username VARCHAR(20) NOT NULL,"+ 
-            "password VARCHAR(20) NOT NULL,"+
-            "PRIMARY KEY(user_id),"+
-            "UNIQUE(username)"+
-            ");");
+  sqlite3_stmt *statement;
+  //query("CREATE TABLE Players(user_id INTEGER, username VARCHAR(20) NOT NULL, password VARCHAR(20) NOT NULL, PRIMARY KEY(user_id), UNIQUE(username);");
+
+  //----Modification by James Murdock 20120418----//
+ const char *createTable_players("CREATE TABLE IF NOT EXISTS Players(user_id INTEGER, username VARCHAR(20) NOT NULL, password VARCHAR(20) NOT NULL, PRIMARY KEY(user_id), UNIQUE(username));");
             
-    query_gd("CREATE TABLE IF NOT EXISTS game_data("+
-            "gd_id VARCHAR(20),"+
-            "u_id INTEGER,"+
-            "lua_blob BLOB,"+
-            "PRIMARY KEY(gd_id)"+
-            "FOREIGN KEY(u_id) REFERENCES users(user_id)"
-            ");");
-    //----End Modification by James Murdock 20120418----        
+ const char *createTable_gd("CREATE TABLE IF NOT EXISTS game_data(gd_id VARCHAR(20), u_id INTEGER, lua_blob BLOB, PRIMARY KEY(gd_id) FOREIGN KEY(u_id) REFERENCES users(user_id));");
+
+
+  if(sqlite3_prepare_v2(db, createTable_players, -1, &statement, 0) == SQLITE_OK)
+    {
+      sqlite3_finalize(statement);
+    }
+
+  if(sqlite3_prepare_v2(db, createTable_gd, -1, &statement, 0) == SQLITE_OK)
+    {
+      sqlite3_finalize(statement);
+    }
+    //----End Modification by James Murdock 20120418----//        
     return true;
 }
 
