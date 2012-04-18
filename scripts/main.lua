@@ -1,4 +1,9 @@
 require'log'
+function server_send(name, text)
+   send_player_text(name, text)
+end
+
+require'messaging'
 require'types'
 require'functions'
 require'parser'
