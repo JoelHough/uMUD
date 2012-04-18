@@ -6,7 +6,7 @@
 
    ]]--
 
-local things = { }
+things = { }
 
 function get_thing(id)
    return things[id:lower()]
@@ -22,25 +22,36 @@ function add_thing(name, data)
    return id
 end
 
---Function for creation. Places the supplied 'thing' into the list of things. Also keeps a count of how many of
---That particular thing exist at present.
-function create(thing, ...)
+
+
+--New n' improved function takes the function's type (synonymous with name at this juncture), and a table of values.
+-- The Idea is to return a unique Item ID (String#).
+function create(type, t_entries)
 
    --If this type of 'thing' hasn't been created yet, create the first one.
    --This also instantiates the 'root' thing, an un numbered representation of the entire category of this particular thing. 
-   if not things[thing] then
-      things[thing] = { count = 1, open_ids = { } }
-      things[thing .. 1] = { name='TODO: Description', type = thing, container='TODO: Originating container' }
+   if not things[type] then
+      DEBUG("Type is" .. type)
+      things[type] = { name = type, count = 1, open_ids = { } }
+      DEBUG('Created ' .. things[type].name)
+      things[type .. 1] = t_entries
+      print (type .. " created, ID is " .. type..things[type].count)
+      print ("Description " .. things[type..1].description)
+      return type .. 1
    else
-      local count = things[thing].count + 1
-      things[thing .. count] = { name = 'TODO: Description', type = thing, container = 'TODO: Originating container' }
-      things[thing].count = count --Update the quantity of things['thing']
+      local count = things[type].count + 1
+      things[type .. count] = t_entries
+      things[type].count = count --Update the quantity of things[type]
+      print ("Thing created: " .. type..count)
+      return type .. count
    end
 
 
 end
 
 
+
+ 
 
 function destroy(thing, ...)
    
