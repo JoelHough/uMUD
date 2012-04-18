@@ -74,7 +74,7 @@ function types_match(types, adjectives)
 end
 
 local function group_item(group)
-   return group.noun or group.pronoun or 'string-type'
+   return group.noun or group.pronoun or (group.string and 'string-type') or (group.thing_id and 'thing-id')
 end
 
 local function bind_phrase(thing, phrase, bind_mode)
