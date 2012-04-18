@@ -1,11 +1,7 @@
-require'players'
-require'containers'
-require'rooms'
-
 add_atoms{muderator='player'}
 
-add_player('God', {type='muderator', name='God'})
-add_player('MysteriousForce', {type='muderator', name='a mysterious force'})
+add_player('God', {types={'muderator'}, name='God'})
+add_player('MysteriousForce', {types={'muderator'}, name='a mysterious force'})
 
 F'put-in muderator room'(get_thing('God'), get_room('void'))
 

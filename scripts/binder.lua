@@ -63,7 +63,7 @@ function get_objects_from_phrase(container, phrase)
    end
    local results = {}
    for i, v in ipairs(table.unique(items)) do
-      results[i] = {type=v.type, value=v}
+      results[i] = {types=v.types, value=v}
    end
    return results
 end
@@ -125,14 +125,14 @@ function bind_and_execute(actor, command)
 
    if not subjects then
       DEBUG'Bare verb'
-      safe_f{actor.type, verb}(player, verb)
+      safe_f{actor.types, verb}(player, verb)
    elseif not objects then
       DEBUG('Bound ' .. #subjects .. ' subjects')
       if #subjects == 0 then
          print('Couldn\'t find anything by that description')
       else
          for _, subject in pairs(subjects) do
-            safe_f{actor.type, verb, subject.type}(actor, verb, subject.value)
+            safe_f{actor.types, verb, subject.types}(actor, verb, subject.value)
          end
       end
    else
@@ -142,7 +142,7 @@ function bind_and_execute(actor, command)
       else
          for _, subject in pairs(subjects) do
             for _, object in pairs(objects) do
-               safe_f{actor.type, verb, subject.type, object.type}(actor, verb, subject.value.string, object.value)
+               safe_f{actor.types, verb, subject.types, object.types}(actor, verb, subject.value, object.value)
             end
          end
       end
