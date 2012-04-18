@@ -62,6 +62,7 @@ warranty, and with no claim as to its suitability for any purpose.
 //include the new class header file -C
 #include "dbase.h"
 
+
 //including the lua libraries -C
 extern "C"{
 #include <lua.h>
@@ -950,10 +951,15 @@ int main ()
     db->initialize();
     L = luaL_newstate(); //initialize the lua state to be used until the game shuts down.
 
+// in order to luaL_dofile to work you need the full path of the lua file so set it here -C
+    const char* path = "/Users/c/Desktop/classes2012/spring/cs3505/projects/project5/repo/uMUD/scripts/main.lua";
+//    const char* path = "../uMUD/scripts/main.lua";
+
+
     luaL_openlibs(L); //open the libs. I think this will open them all.
-    if(luaL_dofile(L, "main.lua") != 0) // if there are no errors luaL_dofile() will rerturn 0
+    if(luaL_dofile(L, path) != 0) // if there are no errors luaL_dofile() will rerturn 0
     {
-        cerr << "there was an error with luaL_dofile in server.cpp line 954" << endl;
+        cerr << "there was an error with luaL_dofile: " << lua_tostring(L, -1) << endl;
     }
 
     cout << "Tiny MUD server version " << VERSION << endl;
