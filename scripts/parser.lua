@@ -11,7 +11,7 @@ require'lpeg'
 require'log'
 require'utils'
 
-local new_atoms = {'preposition', 'noun', 'noun-preposition', 'verb', 'adjective', 'adverb', 'pronoun'}
+local new_atoms = {'preposition', 'noun', 'noun-preposition', 'verb', 'adjective', 'adverb', 'pronoun', 'thing-id'}
 add_atoms(new_atoms)
 
 -- Separated for convenience
@@ -103,6 +103,10 @@ local function combine_adverbs(text, pos, cap)
    return true, cap
 end
 
+local article = token('ARTICLE', word_that(is_in(articles)))
+local conjunction = token('CONJUNCTION', word_that(is_in(conjunctions)))
+local number = token('NUMBER', R'09'^1 / tonumber)
+
 local preposition = token('PREPOSITION', word_that(is_preposition))
 local noun = token('NOUN', word_that(is_noun))
 local noun_preposition = token('NOUN_PREPOSITION', word_that(is_noun_preposition))
@@ -111,6 +115,7 @@ local adverb = token('ADVERB', word_that(is_adverb))
 local adverbs = Ct(adverb^0)
 local adjective = token('ADJECTIVE', word_that(is_adjective))
 local pronoun = token('PRONOUN', word_that(is_pronoun))
+local thing_id = token('THING_ID', C(word_that(is_noun) * number))
 
 local function quoted(quote_char)
    local quote = P(quote_char)
@@ -118,11 +123,7 @@ local function quoted(quote_char)
 end
 local quoted_string = token('STRING', quoted('"') + quoted("'") + quoted('`'))
 
-local article = token('ARTICLE', word_that(is_in(articles)))
-local conjunction = token('CONJUNCTION', word_that(is_in(conjunctions)))
-local number = token('NUMBER', R'09'^1 / tonumber)
-
-local noun_group = Cg(article, 'article')^-1 * Cg(number, 'number')^-1 * Cg(Ct(adjective^0), 'adjectives') * (Cg(noun, 'noun') + Cg(pronoun, 'pronoun') + Cg(quoted_string, 'string'))
+local noun_group = Cg(article, 'article')^-1 * Cg(number, 'number')^-1 * Cg(Ct(adjective^0), 'adjectives') * (Cg(noun, 'noun') + Cg(pronoun, 'pronoun') + Cg(quoted_string, 'string') + Cg(thing_id, 'thing_id'))
 local noun_phrase = Ct(Cg(Ct(Ct(noun_group) * (Ct(Cg(noun_preposition, 'preposition') * noun_group))^0), 'groups'))
 local command = Cg(adverbs, 'adverbs1') * Cg(verb, 'verb') * Cg(adverbs, 'adverbs2') * (Cg(noun_phrase, 'subject') * Cg(adverbs, 'adverbs3') * (Cg(preposition, 'preposition') * Cg(noun_phrase, 'object') * Cg(adverbs, 'adverbs4'))^-1)^-1
    + Cg(adverbs, 'adverbs1') * Cg(preposition, 'preposition') * Cg(noun_phrase, 'object') * Cg(adverbs, 'adverbs2') * Cg(verb, 'verb') * Cg(adverbs, 'adverbs3') * Cg(noun_phrase, 'subject') * Cg(adverbs, 'adverbs4')
@@ -130,14 +131,32 @@ local sentence = Ct(Cg(Ct(Cmt(Ct(command), combine_adverbs) * Cmt(Ct(Cg(conjunct
 
 local input = Ct(Cg(Ct(Cg(sentence) * (sentence_end * Cg(sentence))^0 * sentence_end^0 * line_end), 'sentences'))
 
-function parse(text)
+local function error_message(text)
+   return 'Huh?  I ran into trouble about here: ' .. text:sub(0, errpos - 1) .. '>>>' .. text:sub(errpos) ..
+      "\n" .. 'I would\'ve liked to have found one of these: ' .. table.concat(looking_for_at[errpos], ', ')
+end
+
+local function reset_error()
    errpos = 0
    looking_for_at = {}
+end
+
+function parse_phrase(text)
+   reset_error()
+   local match = noun_phrase:match(text)
+   local msg = ''
+   if not match then
+      msg = error_message(text)
+   end
+   return match, msg
+end
+
+function parse(text)
+   reset_error()
    local match = input:match(text)
    local msg = ''
    if not match then
-      msg = 'Huh?  I ran into trouble about here: ' .. text:sub(0, errpos - 1) .. '>>>' .. text:sub(errpos)
-      msg = msg .. "\n" .. 'I would\'ve liked to have found one of these: ' .. table.concat(looking_for_at[errpos], ', ')
+      msg = error_message(text)
    else
       printTable(match, DEBUG)
    end

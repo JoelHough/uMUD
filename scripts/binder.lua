@@ -42,7 +42,7 @@ function get_objects_from_phrase(container, phrase)
          table.insert(types, group.noun)
          if preposition == 'and' then
             for _, v in ipairs(container.contents) do -- This should use a function for container searching or something
-               if types_match(v.types, types) then table.insert(items, v) end
+               if types_match(v.types , types) then table.insert(items, v) end
             end
          elseif preposition == 'except' then
             for i=#items, 1, -1 do
@@ -63,7 +63,7 @@ function get_objects_from_phrase(container, phrase)
    end
    local results = {}
    for i, v in ipairs(table.unique(items)) do
-      results[i] = {type=v.type, value=v}
+      results[i] = {types=v.types, value=v}
    end
    return results
 end
@@ -74,7 +74,7 @@ function types_match(types, adjectives)
 end
 
 local function group_item(group)
-   return group.noun or group.pronoun or 'string-type'
+   return group.noun or group.pronoun or (group.string and 'string-type') or (group.thing_id and 'thing-id')
 end
 
 local function bind_phrase(thing, phrase, bind_mode)
@@ -83,7 +83,7 @@ local function bind_phrase(thing, phrase, bind_mode)
    local results = {}
    if bind_mode == 'none' then
       for _, group in ipairs(phrase.groups) do
-         table.insert(results, {type=group_item(group), value=group})
+         table.insert(results, {types={group_item(group)}, value=group})
       end
    elseif bind_mode == 'standard' then
       results = get_objects_from_phrase(thing.container, phrase)
@@ -125,14 +125,14 @@ function bind_and_execute(actor, command)
 
    if not subjects then
       DEBUG'Bare verb'
-      safe_f{actor.type, verb}(player, verb)
+      safe_f{actor.types, verb}(player, verb)
    elseif not objects then
       DEBUG('Bound ' .. #subjects .. ' subjects')
       if #subjects == 0 then
          print('Couldn\'t find anything by that description')
       else
          for _, subject in pairs(subjects) do
-            safe_f{actor.type, verb, subject.type}(actor, verb, subject.value)
+            safe_f{actor.types, verb, subject.types}(actor, verb, subject.value)
          end
       end
    else
@@ -142,7 +142,7 @@ function bind_and_execute(actor, command)
       else
          for _, subject in pairs(subjects) do
             for _, object in pairs(objects) do
-               safe_f{actor.type, verb, subject.type, object.type}(actor, verb, subject.value.string, object.value)
+               safe_f{actor.types, verb, subject.types, object.types}(actor, verb, subject.value, object.value)
             end
          end
       end

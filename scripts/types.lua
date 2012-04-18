@@ -38,7 +38,7 @@ end
 
 function add_atom(child)
    DEBUG('Adding atom ' .. child)
-   if not collider[child] then
+   if not get_atom(child) then
       collider[child] = { name = child, anc = { } , desc = { } }
    else
       INFO(child .. " already exists")
@@ -110,15 +110,18 @@ function get_all_children(parent)
    return get_all(parent, "desc")
 end
 
-
 function get_all_parents(children)
    return get_all(children, "anc")
 end
 
-
 function get_all(root, rel)
+   local to_visit = {}
+   if type(root) == 'table' then
+      for _, v in ipairs(root) do table.insert(to_visit, get_atom(v)) end
+   else
+      table.insert(to_visit, get_atom(root))
+   end
 
-   local to_visit = { collider[root] }
    if #to_visit == 0 then
       ERROR(root .. ' doesn\'t exist!')
       return nil
