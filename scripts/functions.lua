@@ -67,14 +67,32 @@ local function get_function_(atoms, funcs, level, names)
    return nil
 end
 
+local function print_atoms(atoms)
+   local string = ""
+   for i, arg in ipairs(atoms) do
+      if i ~= 1 then string = string .. ' ' end
+      if type(arg) == 'string' then
+         string = string .. arg
+      elseif type(arg) == 'table' then
+         string = string .. '{'
+         for j, str in ipairs(arg) do
+            if j ~= 1 then string = string .. ' ' end
+            string = string .. str
+         end
+         string = string .. '}'
+      end
+   end
+   return string
+end
+
 function get_function(atoms)
    if type(atoms) == 'string' then atoms = words(atoms) end
    local found = {}
    local f = get_function_(atoms, functions, 1, found)
    if f == nil then
-      WARNING('No function found for \'' .. table.concat(atoms, ' ') .. '\'.')
+      WARNING('No function found for \'' .. print_atoms(atoms) .. '\'.')
    else
-      DEBUG('Found function \'' .. table.concat(found, ' ') .. '\' for \'' .. table.concat(atoms, ' ') .. '\'')
+      DEBUG('Found function \'' .. table.concat(found, ' ') .. '\' for \'' .. print_atoms(atoms) .. '\'')
    end
    return f
 end

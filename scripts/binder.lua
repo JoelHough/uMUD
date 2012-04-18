@@ -42,11 +42,11 @@ function get_objects_from_phrase(container, phrase)
          table.insert(types, group.noun)
          if preposition == 'and' then
             for _, v in ipairs(container.contents) do -- This should use a function for container searching or something
-               if types_match( {v.type} , types) then table.insert(items, v) end
+               if types_match(v.types , types) then table.insert(items, v) end
             end
          elseif preposition == 'except' then
             for i=#items, 1, -1 do
-               if types_match( { items[i].type }, types) then table.remove(items, i) end
+               if types_match(items[i].types, types) then table.remove(items, i) end
             end
          end
       elseif group.pronoun then
@@ -83,7 +83,7 @@ local function bind_phrase(thing, phrase, bind_mode)
    local results = {}
    if bind_mode == 'none' then
       for _, group in ipairs(phrase.groups) do
-         table.insert(results, {type=group_item(group), value=group})
+         table.insert(results, {types={group_item(group)}, value=group})
       end
    elseif bind_mode == 'standard' then
       results = get_objects_from_phrase(thing.container, phrase)
