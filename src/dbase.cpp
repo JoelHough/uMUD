@@ -85,7 +85,23 @@ void dBase::close()
 
 bool dBase::initialize()
 {
-    query("CREATE TABLE Players (Name varchar(20), Password varchar(20));");
+    //----Modification by James Murdock 20120418----
+    query_user("CREATE TABLE IF NOT EXISTS Players("+
+            "user_id INTEGER,"+ 
+            "username VARCHAR(20) NOT NULL,"+ 
+            "password VARCHAR(20) NOT NULL,"+
+            "PRIMARY KEY(user_id),"+
+            "UNIQUE(username)"+
+            ");");
+            
+    query_gd("CREATE TABLE IF NOT EXISTS game_data("+
+            "gd_id VARCHAR(20),"+
+            "u_id INTEGER,"+
+            "lua_blob BLOB,"+
+            "PRIMARY KEY(gd_id)"+
+            "FOREIGN KEY(u_id) REFERENCES users(user_id)"
+            ");");
+    //----End Modification by James Murdock 20120418----        
     return true;
 }
 
@@ -95,7 +111,7 @@ bool dBase::queryLogin(string name, string password)
   /* Check Name -- *New* or *Existing* Player? */
   /* <<<This Query is Wrong!>>>
    */
-  vector<vector<string> > player_check = query(("SELECT Name, Password FROM Players WHERE Name = '" + name + "';").c_str());
+  vector<vector<string> > player_check = query(("SELECT username, password FROM Players WHERE username = '" + name + "';").c_str());
 
   //cerr << "player_check.size() = " << player_check.size() << endl;
 
