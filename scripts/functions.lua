@@ -1,56 +1,81 @@
 -- Functions table handling.
-require('types')
+require'types'
+require'log'
+require'utils'
 
+local functions = { }
 
-functions = { }
-
-function functions.new(string, f)
-   if not functions[string] then   
-      funcions[string] = f
+local function add_function_(atoms, func, funcs, level)
+   if #atoms < level then
+      if funcs[1] then WARNING('Overriding function for \'' .. table.concat(atoms, ' ') .. "'") end
+      funcs[1] = func
+   else
+      local atom = atoms[level]
+      if not funcs[atom] then funcs[atom] = {} end
+      add_function_(atoms, func, funcs[atom], level + 1)
    end
-   
 end
 
-function no_function(...)
-   print('I don\'t know how to do that.')
+function add_function(atoms, func)
+   if type(atoms) == 'string' then atoms = words(atoms) end
+   add_function_(atoms, func, functions, 1)
 end
 
-function get_function(verb, subject, object) --Get sword with the tongs - sword = subject, tongs = object
+function add_functions(funcs)
+   for atoms, func in pairs(funcs) do
+      add_function(atoms, func)
+   end
+end
 
-   local x,y,z
+function modified_verb(verb, preposition, adverbs)
+   -- Turns 'get', 'with', and {'quickly'} from 'quickly get <subject> with <object>' 
+   -- into the verb 'get-with-quickly', if such a variation exists.
+   -- Adverbs are optional.  No get-quickly?  get will work fine.
+   -- Prepositions are not optional.  No get-with?  Then we shouldn't even try to execute this thing.
 
-   x = helper(verb)
-   y = helper(subject)
-   z = helper(object)
+   -- Simple name-mangling is used to find function forms.
+   -- First, append '-<preposition>', so 'get' becomes 'get-with'
+   local new_verb = verb
+   if preposition then 
+      new_verb = new_verb .. '-' .. preposition
+   end
 
-   for ix,vx in ipairs(x) do
+   -- TODO: Then, we do some magic for finding verbs that are modified by adverbs.
+   -- Well, we don't yet because our adverbs are just for flavor right now, and the
+   -- output functions have access to the adverbs so that they can add the flavor
+   -- text without the use of overloaded functions.
 
-      for iy,vy in ipairs(y) do
-	 for iz,vz in ipairs(z) do
-	    output = vx .. vy .. vz
-	    local f = functions[output:match(".*%S")]
-	    if f then
-	       return f
-	    end
+   -- TODO: If the verb doesn't have this particular form, we need a clever error
+   -- for the user.  Something like 'I don't know how to <verb> stuff <preposition> things.
+   -- So, 'I don't know how to get/hit/cuddle stuff with/using/beneath things'
+   return new_verb
+end
 
-	 end
+local function get_function_(atoms, funcs, level, names)
+   if #atoms < level then return funcs[1] end
+   local ancestry = get_all_parents(atoms[level])
+   for _, v in ipairs(ancestry) do
+      local sub_funcs = funcs[v]
+      if sub_funcs then
+         local f = get_function_(atoms, sub_funcs, level + 1, names) or sub_funcs[1]
+         if f ~= nil then
+            table.insert(names, 1, v)
+            return f
+         end
       end
    end
-   return no_function
+   return nil
 end
 
-
--- Small helper function to take in an atom (verb, subject, etc...) and return its parents in the heirarchy.
--- Should the atom be nil, meaning it wasn't supplied as an arg in get_function, it returns a table containing an empty string.
-function helper(atom)
-   if not atom then
-      x = { }
-      return { "" }
+function get_function(atoms)
+   if type(atoms) == 'string' then atoms = words(atoms) end
+   local found = {}
+   local f = get_function_(atoms, functions, 1, found)
+   if f == nil then
+      WARNING('No function found for \'' .. table.concat(atoms, ' ') .. '\'.')
    else
-      return get_all_parents(atom)
+      DEBUG('Found function \'' .. table.concat(found, ' ') .. '\' for \'' .. table.concat(atoms, ' ') .. '\'')
    end
+   return f
 end
-
-
-
-
+F = get_function
