@@ -117,15 +117,22 @@ end
 function get_all(root, rel)
    local to_visit = {}
    if type(root) == 'table' then
-      for _, v in ipairs(root) do table.insert(to_visit, get_atom(v)) end
+      for _, v in ipairs(root) do 
+         local atom = get_atom(v)
+         if not atom then
+            ERROR(atom .. 'doesn\'t exist!')
+            return nil
+         end
+         table.insert(to_visit, atom)
+      end
    else
       table.insert(to_visit, get_atom(root))
+      if #to_visit == 0 then
+         ERROR(root .. ' doesn\'t exist!')
+         return nil
+      end
    end
-
-   if #to_visit == 0 then
-      ERROR(root .. ' doesn\'t exist!')
-      return nil
-   end
+   
    local visited = { }
 
    while next(to_visit) do

@@ -87,6 +87,10 @@ end
 
 function get_function(atoms)
    if type(atoms) == 'string' then atoms = words(atoms) end
+   for i, v in ipairs(atoms) do
+      if v.types then atoms[i] = v.types end
+   end
+   
    local found = {}
    local f = get_function_(atoms, functions, 1, found)
    if f == nil then

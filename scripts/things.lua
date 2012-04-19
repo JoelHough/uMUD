@@ -35,14 +35,14 @@ function create(type, t_entries)
       things[type] = { name = type, count = 1, open_ids = { } }
       DEBUG('Created ' .. things[type].name)
       things[type .. 1] = t_entries
-      print (type .. " created, ID is " .. type..things[type].count)
-      print ("Description " .. things[type..1].description)
+      DEBUG (type .. " created, ID is " .. type..things[type].count)
+      --DEBUG ("Description " .. things[type..1].description)
       return type .. 1
    else
       local count = things[type].count + 1
       things[type .. count] = t_entries
       things[type].count = count --Update the quantity of things[type]
-      print ("Thing created: " .. type..count)
+      DEBUG ("Thing created: " .. type..count)
       return type .. count
    end
 

@@ -8,6 +8,6 @@ end
 
 function witness_text(player, text)
    for _, witness in ipairs(get_objects_from_phrase(player.container, parse_phrase('player except ' .. player.name))) do
-      server_send(witneww.name, name_replace(text, witness.name, 'you'))
+      server_send(witness.name, name_replace(text, witness.name, 'you'))
    end
 end
