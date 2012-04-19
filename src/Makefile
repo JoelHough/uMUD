@@ -19,7 +19,7 @@ EXE		= server
 all: lua $(EXE)
 
 lua:
-	cd ../lib/lua-5.2.0 && $(MAKE) local
+	cd ../lib/lua-5.2.0 && $(MAKE) linux local
 
 sqlite3.o: sqlite3.c
 	gcc -c $< -o $@
