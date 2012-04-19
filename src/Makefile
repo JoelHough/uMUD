@@ -4,7 +4,7 @@
 # #---------------------------------------------------------------
 #
 CC              = g++
-CFLAGS          = -g -Wall -pedantic -I../include -L../lib
+CFLAGS          = -g -Wall -pedantic -I../lib/lua-5.2.0/install/include -L../lib/lua-5.2.0/install/lib
 CPPFLAGS        = $(CFLAGS)
 OBJS		= server.o dbase.o sqlite3.o
 LIBS            = -llua -lpthread -ldl
@@ -16,7 +16,10 @@ EXE		= server
 # #
 # # when you run make by itself, this is what it will try to create
 # #
-all: $(EXE)
+all: lua $(EXE)
+
+lua:
+	cd ../lib/lua-5.2.0 && $(MAKE) local
 
 sqlite3.o: sqlite3.c
 	gcc -c $< -o $@
