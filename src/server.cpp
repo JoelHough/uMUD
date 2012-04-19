@@ -952,7 +952,8 @@ int main ()
     L = luaL_newstate(); //initialize the lua state to be used until the game shuts down.
 
 // in order to luaL_dofile to work you need the full path of the lua file so set it here -C
-    const char* path = "/Users/c/Desktop/classes2012/spring/cs3505/projects/project5/repo/uMUD/scripts/main.lua";
+//    const char* path = "/Users/c/Desktop/classes2012/spring/cs3505/projects/project5/repo2/uMUD/scripts/main.lua";
+    const char* path = "/Users/c/Desktop/classes2012/spring/cs3505/projects/project5/repo2/uMUD/scripts/main.lua";
 //    const char* path = "../uMUD/scripts/main.lua";
 
 
