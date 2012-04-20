@@ -23,7 +23,7 @@ public:
     dBase();
     ~dBase();
 
-    bool open(char* filename);
+    bool open(const char *filename);
     std::vector<std::vector<std::string> > query(const char *query);
     void close();
     bool initialize();

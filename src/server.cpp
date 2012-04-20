@@ -84,7 +84,6 @@ extern "C"{
 
 
 using namespace std;
-
 // configuration constants
 
 static const string VERSION = ">>>> 1.2.0";        // server version
@@ -114,6 +113,14 @@ static fd_set exc_set;
 static dBase *db;
 lua_State* L; //declare the global lua_state variable.
 
+/**************************************************
+  lua commuication functions added 4/19/12 -C
+  *************************************************/
+int to_lua (lua_State *L, string name, string message); //declaration to apease the mighty compiler.
+/**************************************************
+  end lua commuication
+  *************************************************/
+
 
 /* connection states - add more to have more complex connection dialogs */
 typedef enum
@@ -127,7 +134,6 @@ typedef enum
 
     ePlaying              // this is the normal 'connected' mode
 } tConnectionStates;
-
 
 /*---------------------------------------------- */
 /*  player class - holds details about each connected player */
@@ -163,7 +169,7 @@ public:
         ProcessWrite ();    // send outstanding text
         if (s != NO_SOCKET) /* close connection if active */
             close (s);
-    };
+    }
 
     void Init ()
     {
@@ -239,7 +245,7 @@ vector<string>* Tokenize(string str)
     vector<string> *tokens = new vector<string>();
 
     int previous_space = 0;
-    for (int i = 0; i < str.size(); i++)
+    for (size_t i = 0; i < str.size(); i++)
     {
         if (str[i] == ' ')
         {
@@ -349,7 +355,7 @@ Player* GetTargetPlayer(string n)
 
     //cerr << "Get the Player \"" << n << "\"" << endl;
 
-    for (int i = 0; i < playerList.size(); i++)
+    for (size_t i = 0; i < playerList.size(); i++)
     {
         /* DEBUG -- What's in the playerList here? */
         //cerr << "PlayerList(i) = \"" << playerList.at(i)->Name() <<"\""<< endl;
@@ -395,7 +401,7 @@ void MakeWorldBroadcast(vector<string> *world_message)
 
     //cerr << "...making world broadcast of \""<<msg<<"\""<<endl;
 
-    for (int i = 0; i < playerList.size(); i++)
+    for (size_t i = 0; i < playerList.size(); i++)
     {
         write((playerList.at(i))->GetSocket(), cast, msg.size());
     }
@@ -482,6 +488,7 @@ void CloseComms ()
  * *****
  */
 void RemoveInactivePlayers (string n);
+
 /*
  * <COULD BE MADE MORE EFFICIENT>:
  * Take all this code and run it through ONE_FUNCTION
@@ -522,9 +529,16 @@ void ActOnPlayerInput(Player *p, string msg)
     }
     else
     {
+        //added to communicate with lua.main 4/20/12 -C
+        //debug
+        cerr << "calling to lua -server.cpp L:606" << endl;
+        to_lua(L,p->name, msg);
+        //end addtion
+
         msg = PROMPT + "Echo: " + msg + "\n";
         const char *echo = msg.c_str();
         write(p->GetSocket(), echo, msg.size());
+
     }
 }
 
@@ -657,7 +671,7 @@ void ProcessPlayerInput (Player * p, const string & s)
 bool Player::IsValidName(string name)
 {
     /* SQLite stuff here... */
-    string s1("SELECT Name FROM Players WHERE Name = '");
+    string s1("SELECT username FROM Players WHERE username = '");
     string s2("'");
     // Make sure only alpha-characters have been passed -- else erase those
     EraseWhitespaces(name);
@@ -690,7 +704,7 @@ bool Player::IsValidName(string name)
 bool Player::IsValidPassword(bool is_new_player, string name, string pwd)
 {
     /* SQLite stuff here... */
-    string s1("SELECT Password FROM Players WHERE Password = '");
+    string s1("SELECT password FROM Players WHERE password = '");
     string s2("'");
     // Make sure only alpha-characters have been passed -- else erase those
     EraseWhitespaces(pwd);
@@ -902,6 +916,96 @@ void RemoveInactivePlayers (string n)
 } // end of RemoveInactivePlayers
 
 
+
+/**************************************************
+  lua commuication functions added 4/19/12 -C
+  *************************************************/
+/*
+  int from_lua (lua_State *L)
+  a function that will be registered in main with the lua state and then can be called from lua.
+  lua can provide it any number of arguments and it will push them into a vector.
+  as it is written now it only uses the first two args which needs to be a string!! as of now.
+  it returns 1 if all goes well if fact it will always return 1 but that give the option
+  later to return something else.
+  */
+int from_lua (lua_State *L)
+{
+    int argCount = lua_gettop(L);
+    //debug
+    cerr << "debug-- from_lua called with " << argCount
+         << " arguments. -server.cpp L:148" << endl;
+    vector <string> values;
+    for ( int n=1; n<=argCount; ++n ) { // the first arg is at 1
+
+        //debug
+        std::cerr << "-- argument " << n << ": "
+                  << lua_tostring(L, n) << " -server.cpp L:154"<< endl;
+        values.push_back(lua_tostring(L,n));
+    }
+    string name = values[0];
+    string message = values[1];
+    lua_pop(L,1);
+    lua_pushnumber(L,1);// push the number one to indicate success.
+    //need to call a function to put send this out to telnet yo!
+    //this may need to be modified to suit our later needs -C
+
+    Player* p = NULL;
+    p = GetTargetPlayer(name); //get the pointer to the player by looking up his name
+
+    write(p->GetSocket(), message.c_str(), message.size()); //send out the message to the player
+    values.clear(); // clear out the vector. not necesary but what the hell.
+    return 1;
+}
+
+/*
+  int to_lua (lua_State *L, string name, string message)
+  a function that will try to call the function got_player_text(name, text) from the lua
+  state L. passing it the strings name and message. if succesful it will return1
+  if not it will return -1. right now the lua function cannot return anything.
+  but that can change if need be.
+  **note: this is delaired on L:119**
+  */
+int to_lua (lua_State *L, string name, string message)
+{
+    lua_getglobal(L, "got_player_text");
+    if(!lua_isfunction(L,-1))
+    {
+        lua_pop(L,1); //it wasn't a function better remove it from the stack!
+        return -1; // return failure
+    }
+    lua_pushstring(L, name.c_str());   // push 1st argument
+    lua_pushstring(L, message.c_str());   // push 2nd argument
+
+
+    if (lua_pcall(L, 2, 0, 0) != 0) //do the call (2 arguments, 0 result) if it fails.. report it.
+    {
+        cerr << "error running function `f': " << lua_tostring(L, -1) << endl;
+        return -1;
+    }
+    //no need to pop anything off because pcall didn't return and results.
+    return 1; // return success
+}
+
+/*
+  void report_errors(lua_State *L, int status)
+  this function will cerr out an error in the lua set up if there is one and then pops
+  the error off the stack. it takes in the lua_State and the return value of
+  a std lua function.
+
+  */
+void report_errors(lua_State *L, int status)
+{
+  if ( status!=0 ) {
+    std::cerr << "-- there was a lua error with: " << lua_tostring(L, -1) << std::endl;
+    lua_pop(L, 1); // remove error message
+  }
+}
+/**************************************************
+  end lua commuication functions
+  *************************************************/
+
+
+
 // main processing loop
 void MainLoop ()
 {
@@ -951,13 +1055,16 @@ int main ()
     db->initialize();
     L = luaL_newstate(); //initialize the lua state to be used until the game shuts down.
 
-// in order to luaL_dofile to work you need the full path of the lua file so set it here -C
-//    const char* path = "/Users/c/Desktop/classes2012/spring/cs3505/projects/project5/repo2/uMUD/scripts/main.lua";
-    const char* path = "/Users/c/Desktop/classes2012/spring/cs3505/projects/project5/repo2/uMUD/scripts/main.lua";
-//    const char* path = "../uMUD/scripts/main.lua";
+    //    const char* path = "../scripts/main.lua"; // the relative path that should work normally
+    const char* path = "../../../../uMUD/scripts/main.lua"; // the relative path i need to use at home -C
+
 
 
     luaL_openlibs(L); //open the libs. I think this will open them all.
+
+    // make from_lua(lua_State *L) available to Lua functions
+    lua_register(L, "from_lua", from_lua);
+
     if(luaL_dofile(L, path) != 0) // if there are no errors luaL_dofile() will rerturn 0
     {
         cerr << "there was an error with luaL_dofile: " << lua_tostring(L, -1) << endl;

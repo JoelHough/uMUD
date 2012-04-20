@@ -1,4 +1,4 @@
-require'log'
+--require'log'
 function server_send(name, text)
     send_player_text(name, text)
 end
@@ -20,27 +20,20 @@ end
 
 function got_player_text(name, text)
    -- Got text from player's client
-   DEBUG(name .. '->' .. text)
+   -- some test code -C
+   io.write("debug from lua recieved name: ", name, ", and message: ", text, " -main.lua L:24 " , "\n")
+   -- end test code
+   --DEBUG(name .. '->' .. text)
+   send_player_text(name, "lua is sending you a message bitch!")
 
-   local player = get_thing(name)
-   if not player then
-      ERROR('Command from invalid player \'' .. name .. '\'')
-      return nil
-   end
-   local ast, msg = parse(text)
-   if not ast then
-      send_player_text(name, msg)
-      return nil
-   end
-         
-   for _, sentence in ipairs(ast.sentences) do
-      for _, command in ipairs(sentence.commands) do
-         bind_and_execute(player, command)
-      end
-   end
+
 end
 
 function send_player_text(name, text)
    -- Server send
-   DEBUG(name .. '<-' .. text)
+   --some test code -C
+   c = from_lua(name, text)
+   io.write("from_lua returned '", c, "' -main.lua L:51","\n")
+   --end test code
+   --DEBUG(name .. '<-' .. text)
 end

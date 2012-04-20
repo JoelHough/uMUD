@@ -16,7 +16,7 @@ dBase::~dBase()
   delete this;
 }
 
-bool dBase::open(char* filename)
+bool dBase::open(const char* filename)
 {
     if(sqlite3_open(filename, &db) == SQLITE_OK)
         return true;
@@ -73,7 +73,7 @@ vector<vector<string> > dBase::query(const char* query)
     }
 
     string error = sqlite3_errmsg(db);
-    if(error != "not an error") cout << query << " from dBase->query " << error << endl;
+    if(error != "not an error") cout << query << " from dBase->query: " << error << endl;
 
     return results;
 }
@@ -85,12 +85,15 @@ void dBase::close()
 
 bool dBase::initialize()
 {
+
   sqlite3_stmt *statement;
   //query("CREATE TABLE Players(user_id INTEGER, username VARCHAR(20) NOT NULL, password VARCHAR(20) NOT NULL, PRIMARY KEY(user_id), UNIQUE(username);");
 
+  //** I think this isn't working because string needs the c_str() added to the end of the queries... I hope.
+
   //----Modification by James Murdock 20120418----//
- const char *createTable_players("CREATE TABLE IF NOT EXISTS Players(user_id INTEGER, username VARCHAR(20) NOT NULL, password VARCHAR(20) NOT NULL, PRIMARY KEY(user_id), UNIQUE(username));");
-            
+// const char *createTable_players("CREATE TABLE IF NOT EXISTS Players(user_id INTEGER, username VARCHAR(20) NOT NULL, password VARCHAR(20) NOT NULL, PRIMARY KEY(user_id), UNIQUE(username));");
+ const char *createTable_players("CREATE TABLE Players(user_id INTEGER, username VARCHAR(20) NOT NULL, password VARCHAR(20) NOT NULL, PRIMARY KEY(user_id), UNIQUE(username));");
  const char *createTable_gd("CREATE TABLE IF NOT EXISTS game_data(gd_id VARCHAR(20), u_id INTEGER, lua_blob BLOB, PRIMARY KEY(gd_id) FOREIGN KEY(u_id) REFERENCES users(user_id));");
 
 
@@ -103,7 +106,8 @@ bool dBase::initialize()
     {
       sqlite3_finalize(statement);
     }
-    //----End Modification by James Murdock 20120418----//        
+    //----End Modification by James Murdock 20120418----//
+  std::cerr << "initializing the database dbase.cpp L108 " << std::endl;
     return true;
 }
 
