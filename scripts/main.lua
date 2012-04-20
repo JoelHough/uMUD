@@ -26,7 +26,24 @@ function got_player_text(name, text)
    -- end test code
    DEBUG(name .. '->' .. text)
    q = "Yo! " .. name .. "! lua is sending you a message bitch!"
-   send_player_text(name, q)
+
+   local player = get_thing(name)
+   if not player then
+      ERROR('Command from invalid player \'' .. name .. '\'')
+      return nil
+   end
+   local ast, msg = parse(text)
+   if not ast then
+      send_player_text(name, msg)
+      return nil
+   end
+
+   for _, sentence in ipairs(ast.sentences) do
+      for _, command in ipairs(sentence.commands) do
+         bind_and_execute(player, command)
+      end
+   end
+
 
 
 end
