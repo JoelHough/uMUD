@@ -87,26 +87,31 @@ bool dBase::initialize()
 {
 
   sqlite3_stmt *statement;
-  //query("CREATE TABLE Players(user_id INTEGER, username VARCHAR(20) NOT NULL, password VARCHAR(20) NOT NULL, PRIMARY KEY(user_id), UNIQUE(username);");
-
-  //** I think this isn't working because string needs the c_str() added to the end of the queries... I hope.
 
   //----Modification by James Murdock 20120418----//
+  //----Further Modification by Cody Curtis 4/20/12---//
 // const char *createTable_players("CREATE TABLE IF NOT EXISTS Players(user_id INTEGER, username VARCHAR(20) NOT NULL, password VARCHAR(20) NOT NULL, PRIMARY KEY(user_id), UNIQUE(username));");
- const char *createTable_players("CREATE TABLE Players(user_id INTEGER, username VARCHAR(20) NOT NULL, password VARCHAR(20) NOT NULL, PRIMARY KEY(user_id), UNIQUE(username));");
- const char *createTable_gd("CREATE TABLE IF NOT EXISTS game_data(gd_id VARCHAR(20), u_id INTEGER, lua_blob BLOB, PRIMARY KEY(gd_id) FOREIGN KEY(u_id) REFERENCES users(user_id));");
+// const char *createTable_gd("CREATE TABLE IF NOT EXISTS game_data(gd_id VARCHAR(20), u_id INTEGER, lua_blob BLOB, PRIMARY KEY(gd_id) FOREIGN KEY(u_id) REFERENCES users(user_id));");
+ string createTable_players = "CREATE TABLE IF NOT EXISTS Players(user_id INTEGER, username VARCHAR(20) NOT NULL, password VARCHAR(20) NOT NULL, PRIMARY KEY(user_id), UNIQUE(username));";
+ string createTable_gd = "CREATE TABLE IF NOT EXISTS game_data(gd_id VARCHAR(20), u_id INTEGER, lua_blob BLOB, PRIMARY KEY(gd_id) FOREIGN KEY(u_id) REFERENCES users(user_id));";
+// if(sqlite3_prepare_v2(db, createTable_players, -1, &statement, 0) == SQLITE_OK)
+//    {
+//      //sqlite3_finalize(statement);
+//    }
 
+// sqlite3_finalize(statement);
 
-  if(sqlite3_prepare_v2(db, createTable_players, -1, &statement, 0) == SQLITE_OK)
-    {
-      sqlite3_finalize(statement);
-    }
+//  if(sqlite3_prepare_v2(db, createTable_gd, -1, &statement, 0) == SQLITE_OK)
+//    {
+//      sqlite3_finalize(statement);
+//    }
 
-  if(sqlite3_prepare_v2(db, createTable_gd, -1, &statement, 0) == SQLITE_OK)
-    {
-      sqlite3_finalize(statement);
-    }
-    //----End Modification by James Murdock 20120418----//
+ query(createTable_players.c_str());
+ query(createTable_gd.c_str());
+
+//    //----End Modification by James Murdock 20120418----//
+//    //----End Further Modification by Cody Curtis 4/20/12---//
+
   std::cerr << "initializing the database dbase.cpp L108 " << std::endl;
     return true;
 }
@@ -153,7 +158,7 @@ void dBase::newUser(string name, string password)
   //cerr << "DBase Name: " << name << " of size " << name.size() << endl;
   //cerr << "DBase Password: " << password << " of size " << password.size() << //endl;
 
-  string s1("INSERT INTO Players VALUES('");
+  string s1("INSERT INTO Players VALUES(NULL, '");
   string s2("' , '");
   string s3("')");
   string command = s1 + name + s2 + password + s3;

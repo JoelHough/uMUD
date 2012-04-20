@@ -673,19 +673,19 @@ bool Player::IsValidName(string name)
 {
     /* SQLite stuff here... */
     string s1("SELECT username FROM Players WHERE username = '");
-    string s2("'");
+    string s2("';");
     // Make sure only alpha-characters have been passed -- else erase those
     EraseWhitespaces(name);
 
     string s = s1 + name + s2;
     const char *Q = s.c_str();
-    //cerr << "Q --> " << Q << endl;
+    cerr << "Q --> " << Q << endl;
     vector< vector<string> > results = db->query(Q);
 
     // Was the Player's name already in the DB?
     if (results.size() < 1)
     {
-        //cerr << "New Player Name EXCITING" << endl;
+        cerr << "New Player Name EXCITING" << endl;
         return false;
     }
     else
@@ -706,13 +706,13 @@ bool Player::IsValidPassword(bool is_new_player, string name, string pwd)
 {
     /* SQLite stuff here... */
     string s1("SELECT password FROM Players WHERE password = '");
-    string s2("'");
+    string s2("';");
     // Make sure only alpha-characters have been passed -- else erase those
     EraseWhitespaces(pwd);
 
     string s = s1 + pwd + s2;
     const char *Q = s.c_str();
-    //cerr << "Q --> " << Q << endl;
+    cerr << "Q --> " << Q << endl;
     vector< vector<string> > results = db->query(Q);
 
     // Consider password validity -- is it wrong or a new player's?
