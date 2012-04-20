@@ -24,7 +24,8 @@ function got_player_text(name, text)
    io.write("debug from lua recieved name: ", name, ", and message: ", text, " -main.lua L:24 " , "\n")
    -- end test code
    --DEBUG(name .. '->' .. text)
-   send_player_text(name, "lua is sending you a message bitch!")
+   q = "Yo! " .. name .. "! lua is sending you a message bitch!"
+   send_player_text(name, q)
 
 
 end

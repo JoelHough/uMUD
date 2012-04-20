@@ -536,8 +536,9 @@ void ActOnPlayerInput(Player *p, string msg)
         //end addtion
 
         msg = PROMPT + "Echo: " + msg + "\n";
-        const char *echo = msg.c_str();
-        write(p->GetSocket(), echo, msg.size());
+        //commented this out because not lua is echoing messages back. 4/20/12 -C
+//        const char *echo = msg.c_str();
+//        write(p->GetSocket(), echo, msg.size());
 
     }
 }
