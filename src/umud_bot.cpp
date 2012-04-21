@@ -212,7 +212,7 @@ int main(int argc, char *argv[])
 				run = false;
 			}
 
-			//bufstr = "";
+			bufstr = "";
 		}
 		//bufstr = "";
     }
