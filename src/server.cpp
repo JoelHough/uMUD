@@ -58,6 +58,7 @@ warranty, and with no claim as to its suitability for any purpose.
 #include <stdio.h>
 #include <typeinfo>
 
+#include <boost/algorithm/string.hpp>
 
 //include the new class header file -C
 #include "dbase.h"
@@ -364,7 +365,7 @@ Player* GetTargetPlayer(string n)
         //cerr << "PlayerList(i).compare(name) = " <<
         //playerList.at(i)->Name().compare(n) << endl;
 
-        if (playerList.at(i)->Name().compare(n) == 0)
+      if (boost::iequals(playerList.at(i)->Name(), n))
         {
             //cerr << "<Target Confirmed>" << endl;
             p = playerList.at(i);
@@ -863,7 +864,7 @@ void RemoveInactivePlayers (string n)
          i != playerList.end(); ++i)
     {
         //if (!(*i)->Connected ())        // no longer connected
-        if ((*i)->Name().compare(n) == 0)
+      if (boost::iequals((*i)->Name(), n))
         {
             /* DEBUG */
             //cerr << "Erasing " << (*i)->Name() << endl;
@@ -928,7 +929,7 @@ int from_lua_disconnect_player(lua_State *L)
     std::cerr << "Can't find '" << name << "' to kill him!" << endl;
     return 1;
   }
-  string goodbye = PROMPT + "Goodbye " + p->Name() + "\n";
+  string goodbye = "Goodbye " + p->Name() + "\n";
   const char *bye_msg = goodbye.c_str();
   write(p->GetSocket(), bye_msg, goodbye.size());
   p->closing = true;

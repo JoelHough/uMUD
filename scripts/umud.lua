@@ -25,6 +25,7 @@ local function force_do(command)
 end
 
 require'things'
+add_atoms{eval='verb'}
 add_functions{
    ['connect player'] = function(player)
       force_do('whisk ' .. player.id .. ' to the Void')
@@ -37,8 +38,15 @@ add_functions{
    ['definite player'] = function(player) return M('name', player) end,
    ['indefinite player'] = function(player) return M('name', player) end,
    ['player disconnect'] = function(player)
+      witness_text(player, M('indefinite', player) .. ' vanishes!')
+      remove_content(player)
       things[player.id] = nil
       server_disconnect_player(player.id)
+   end,
+   ['subject-bind-search eval'] = 'none',
+   ['muderator eval string-type'] = function(muderator, cmd)
+      player_text(muderator, "Your words run deep.")
+      loadstring(cmd.string)()
    end
              }
 
@@ -56,12 +64,12 @@ add_functions{
       local contents = container.contents
       local content_list = ''
       if #contents then
-         local content_list = "\nYou see here: " .. M('indefinite', contents[1])
+         content_list = "\nYou see here: " .. M('indefinite', contents[1])
          for i=2,#contents do
             content_list = content_list .. ', ' .. M('indefinite', contents[i])
          end
       end
-      return title .. "\n" .. hr .. "\n" .. detail .. "\n" .. content_list
+      return title .. "\n" .. hr .. "\n" .. detail .. content_list
    end,
    ['put-in thing container'] = move_content,
    ['player look'] = function(player) 
@@ -154,7 +162,13 @@ add_functions{
 add_atoms{say='verb', to='preposition'}
 
 add_functions{
-   ['player say-to string-type thing'] = function(player, string, thing)
+   ['subject-bind-search say'] = 'none',
+   ['player say string-type'] = function(player, msg)
+      player_text(player, 'You say "' .. msg.string .. '".')
+      witness_text(player, M('indefinite', player) .. ' says "' .. msg.string .. '".')
+   end,
+   ['subject-bind-search say-to'] = 'none',
+   ['player say-to string-type thing'] = function(player, msg, thing)
       player_text(player, 'You say "' .. msg.string .. '" to ' .. M('definite', thing) .. '.')
       witness_text(player, M('indefinite', player) .. ' says "' .. msg.string .. '" to ' .. M('indefinite', thing) .. '.')
    end
