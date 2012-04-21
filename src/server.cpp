@@ -68,6 +68,7 @@ extern "C"{
 #include <lua.h>
 #include <lualib.h>
 #include <lauxlib.h>
+#include "lpeg.h"
 }
 
 
@@ -1051,7 +1052,7 @@ int main ()
 
 
     luaL_openlibs(L); //open the libs. I think this will open them all.
-
+    luaopen_lpeg(L);
     // make from_lua(lua_State *L) available to Lua functions
     lua_register(L, "server_send", from_lua_send);
     lua_register(L, "server_disconnect_player", from_lua_disconnect_player);

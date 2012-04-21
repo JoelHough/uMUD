@@ -13,6 +13,7 @@
 
 #define KEYNEWPATT	"lpeg.newpf"
 
+int luaopen_lpeg(lua_State *L);
 
 /*
 ** type of extension functions that define new "patterns" for LPEG
