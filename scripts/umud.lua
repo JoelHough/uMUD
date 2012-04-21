@@ -49,11 +49,19 @@ add_atoms{room={'container', 'thing'}, [{'look', 'whisk', 'name'}]='verb', [{'to
 
 add_functions{
    ['container thing'] = function(thing) return thing.container end,
-   ['place-text thing'] = function(thing)
-      local title = M('name', thing)
+   ['place-text container'] = function(container)
+      local title = M('name', container)
       local hr = string.rep('-', #title)
-      local detail = M('detail', thing)
-      return title .. "\n" .. hr .. "\n" .. detail
+      local detail = M('detail', container)
+      local contents = container.contents
+      local content_list = ''
+      if #contents then
+         local content_list = "\nYou see here: " .. M('indefinite', contents[1])
+         for i=2,#contents do
+            content_list = content_list .. ', ' .. M('indefinite', contents[i])
+         end
+      end
+      return title .. "\n" .. hr .. "\n" .. detail .. "\n" .. content_list
    end,
    ['put-in thing container'] = move_content,
    ['player look'] = function(player) 
