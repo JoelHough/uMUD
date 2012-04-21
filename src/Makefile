@@ -23,7 +23,7 @@ lua:
 	cd $(LUA_DIR) && $(MAKE) linux local
 
 lpeg.o: lpeg.c
-	gcc -c $< -o $@
+	gcc $(CFLAGS) $(INCLUDES) -c $< -o $@
 
 sqlite3.o: sqlite3.c
 	gcc -c $< -o $@
