@@ -31,7 +31,7 @@
 
 #define PORT "6667" // the port client will be connecting to
 
-#define MAXDATASIZE 100 // max number of bytes we can get at once
+#define MAXDATASIZE 500 // max number of bytes we can get at once
 
 using namespace std;
 
@@ -99,14 +99,20 @@ int main(int argc, char *argv[])
     bool run = true;
     while(run)
     {
+    	cout << "---RUN Loop0---" << endl;
+    	cout << "---RUN Loop1---" << endl;
+    	cout << "---RUN Loop2---" << endl;
     	if ((numbytes = recv(sockfd, buf, MAXDATASIZE-1, 0)) == -1)
     	{
+    		cout << "---ERROR RECV---" << endl;
 			perror("recv");
 			exit(1);
 		}
+    	cout << "---PRIOR PRINT---" << endl;
     	printf("client: received '%s'\n",buf);
+    	string bufstr(buf);
     	buf[numbytes] = '\0';
-		string bufstr(buf);
+
 
 		while(bufstr.length() > 0)
 		{
@@ -115,54 +121,32 @@ int main(int argc, char *argv[])
 			string msg;
 			bool srvrSection=false;
 			boost::cmatch match;
-			boost::regex srvName(":([a-zA-Z0-9]([a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?\\.)+[a-zA-Z]{2,6}$", boost::regex_constants::perl);
-			boost::regex msgData(":([a-zA-Z0-9]([a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?\\.)![a-zA-Z0-9~]@([a-zA-Z0-9]([a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?\\.)+[a-zA-Z]{2,6} PRIVMSG #TeamException :?m", boost::regex_constants::perl);
+			boost::regex srvName("[:][^\\s][a-zA-Z0-9-]*[.][a-zA-Z0-9-]*[.][a-zA-Z]{2,4}[^\\s]", boost::regex_constants::perl);
+			boost::regex msgData("[:][a-zA-Z0-9-]*[!][~a-zA-Z0-9]*@[a-zA-Z0-9-\\.]*\\sPRIVMSG\\s#TeamException\\s[:].*[^\r\n]", boost::regex_constants::perl);
+			//[:][a-zA-Z0-9-]*[!][~a-zA-Z0-9]*@[a-zA-Z0-9-.]*\\s[P][R][I][V][M][S][G]\\s[#][T][e][a][m][E][x][c][e][p][t][i][o][n]\\s[:].*[\r\n]
 			size_t endpos;
 
-			/*
-			while(bufstr.find("uMUDbot") == string::npos)
+			if(bufstr.find("NOTICE * :*** No Ident response") != string::npos)
 			{
-				if ((numbytes = recv(sockfd, buf, MAXDATASIZE-1, 0)) == -1)
-				{
-					perror("recv");
-					//exit(1);
-				}
-				printf("client: received '%s'\n",buf);
-
-				string tempBufStr(buf);
-
-//				if(tempBufStr.find("NOTICE * :*** No Ident response") != string::npos ||
-//						tempBufStr.find("NOTICE * :*** Checking Ident") != string::npos)
-//				{
-					cout << "---SENDING Ident---" << endl;
+					cout << "---SENDING NICK---" << endl;
 
 					if (send(sockfd, "NICK uMUDbot\n", 13, 0) == -1)
+					{
 						perror("send");
-
-					if (send(sockfd, "USER ident * 8 :uMUD BOT\n", 13, 0) == -1)
-						perror("send");
-				//}
-				bufstr = tempBufStr;
-				tempBufStr = "";
-			}
-			*/
-
-			if((bufstr.find("NOTICE * :*** No Ident response") != string::npos) ||
-					(bufstr.find("NOTICE * :*** Checking Ident") != string::npos))
-			{
+						exit(1);
+					}
 					cout << "---SENDING Ident---" << endl;
-
-					if (send(sockfd, "NICK uMUDbot\n", 13, 0) == -1)
+					if (send(sockfd, "USER ident * 8 :uMUD BOT\n", 25, 0) == -1)
+					{
 						perror("send");
-
-					if (send(sockfd, "USER ident * 8 :uMUD BOT\n", 13, 0) == -1)
-						perror("send");
+						exit(1);
+					}
 			}
 
-			if(bufstr.find("End of /MOTD command") != string::npos)
+			if(bufstr.find(":End of /MOTD command") != string::npos)
 			{
 				cout << "---END OF MOTD FOUND---" << endl;
-				if (send(sockfd, "JOIN #TeamException\n", 13, 0) == -1)
+				if (send(sockfd, "JOIN #TeamException\n", 20, 0) == -1)
 					perror("send");
 			}
 
@@ -191,7 +175,7 @@ int main(int argc, char *argv[])
 					str += nick;
 					str += "\n";
 
-					if (send(sockfd, (void*)str.c_str(), 13, 0) == -1)
+					if (send(sockfd, (void*)str.c_str(), sizeof(str), 0) == -1)
 						perror("send");
 				}
 			}
@@ -203,7 +187,7 @@ int main(int argc, char *argv[])
 				str += srvrName;
 				str += "\n";
 
-				if (send(sockfd, (void*)str.c_str(), 13, 0) == -1)
+				if (send(sockfd, (void*)str.c_str(), sizeof(str), 0) == -1)
 					perror("send");
 			}
 
@@ -212,12 +196,16 @@ int main(int argc, char *argv[])
 				run = false;
 			}
 
+//			int lineEndPos = bufstr.find("\n");
+//			bufstr = bufstr.substr(lineEndPos+1);
+			cout << "---RESETING bufstr---" << endl;
 			bufstr = "";
 		}
 		//bufstr = "";
+		cout << "---ENDING Nested While---" << endl;
     }
     /*--End add by James Murdock--*/
-
+    cout << "---ENDING Program---" << endl;
     close(sockfd);
 
     return 0;
