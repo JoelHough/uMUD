@@ -215,11 +215,11 @@ static void EraseWhitespaces(string &str)
     {
         if (!isalpha(str[i]))
         {
-            if (str[i] == ' ' || str[i] == '\n' || str[i] == '\t'
-                    || str[i] == '\r')
-            {
-                str.erase(i,1);
-            }
+          //if (str[i] == ' ' || str[i] == '\n' || str[i] == '\t'
+          //        || str[i] == '\r')
+          //{
+          str.erase(i,1);
+          //}
         }
     }
 }
@@ -924,13 +924,17 @@ int from_lua_disconnect_player(lua_State *L)
   lua_pop(L, 1);
   lua_pushnumber(L, 1);
   Player *p = GetTargetPlayer(name);
+  if (p == NULL) {
+    std::cerr << "Can't find '" << name << "' to kill him!" << endl;
+    return 1;
+  }
   string goodbye = PROMPT + "Goodbye " + p->Name() + "\n";
   const char *bye_msg = goodbye.c_str();
   write(p->GetSocket(), bye_msg, goodbye.size());
   p->closing = true;
   // Remove anyone that's left from the playerList
   close(p->GetSocket()); // Close the Socket
-  RemoveInactivePlayers(p->Name());
+  RemoveInactivePlayers(name);
   return 1;
 }
 
