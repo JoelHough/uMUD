@@ -11,7 +11,9 @@ add_atoms{muderator='player',
           player='creature',
           creature='thing',
           thing='noun',
-          noun='word'}
+          noun='word',
+          disconnect='verb'
+         }
 
 require'players'
 local god = add_player('God', {types={'muderator'}})
@@ -24,6 +26,9 @@ end
 
 require'things'
 add_functions{
+   ['connect player'] = function(player)
+      force_do('whisk ' .. player.id .. ' to the Void')
+   end,
    ['everything'] = things,
    ['detail thing'] = function(thing) return thing.long_desc or 'It is very non-descript.' end,
    ['name thing'] = function(thing) return thing.name or 'nameless thing' end,
@@ -31,6 +36,10 @@ add_functions{
    ['indefinite thing'] = function(thing) return 'a ' .. M('name', thing) end, -- TODO 'an'
    ['definite player'] = function(player) return M('name', player) end,
    ['indefinite player'] = function(player) return M('name', player) end,
+   ['player disconnect'] = function(player)
+      things[player.id] = nil
+      server_disconnect_player(player.id)
+   end
              }
 
 -- Being in things, including rooms
@@ -94,7 +103,7 @@ add_functions{
    end,
              }
 -- Creating rooms
-add_functions{}
+add_functions{
    ['muderator create room'] = function(muderator, room_group)
       local room = add_room()
       player_text(muderator, 'You will room into being.  You decide to call it \'' .. room.id .. '\'.')

@@ -3,10 +3,11 @@
 # # Date: 	Spring 2012
 # #---------------------------------------------------------------
 #
+LUA_DIR         = ../lib/lua-5.1.5
 CC              = g++
-CFLAGS          = -g -Wall -pedantic -I../lib/lua-5.2.0/install/include -L../lib/lua-5.2.0/install/lib
+CFLAGS          = -g -Wall -pedantic -I$(LUA_DIR)/install/include -L$(LUA_DIR)/install/lib
 CPPFLAGS        = $(CFLAGS)
-OBJS		= server.o dbase.o sqlite3.o
+OBJS		= server.o dbase.o sqlite3.o lpeg.o
 LIBS            = -llua -lpthread -ldl
 EXE		= server
 #
@@ -19,7 +20,10 @@ EXE		= server
 all: lua $(EXE)
 
 lua:
-	cd ../lib/lua-5.2.0 && $(MAKE) linux local
+	cd $(LUA_DIR) && $(MAKE) linux local
+
+lpeg.o: lpeg.c
+	gcc -c $< -o $@
 
 sqlite3.o: sqlite3.c
 	gcc -c $< -o $@

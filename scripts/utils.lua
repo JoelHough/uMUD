@@ -1,3 +1,14 @@
+-- from Rosetta code
+function strip_extended( str )
+    local s = ""
+    for i = 1, str:len() do
+	if str:byte(i) >= 32 and str:byte(i) <= 126 then
+  	    s = s .. str:sub(i,i)
+	end
+    end
+    return s
+end
+
 function table.remove_item(t, item)
    for i, v in ipairs(t) do
       if v == item then

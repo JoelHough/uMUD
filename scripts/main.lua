@@ -1,20 +1,21 @@
+package.path = package.path .. ";../scripts/?.lua"
 require'log'
-log_level = 'ERROR'
-function send_player_text(name, text)
-   -- Server send
-   TEST(name .. '<-' .. text)
-   end
-function server_send(name, text)
-    send_player_text(name, text)
-end
+log_level = 'DEBUG'
 require'umud'
 
 function say(text)
    return got_player_text('God', text)
 end
 
+function new_player(name)
+   local player = add_player(name, {types={'muderator'}})
+   F{'connect', player}(player)
+end
+
 --this function is called by server.cpp when player sends a message.
 function got_player_text(name, text)
+   text = trim(strip_extended(text))
+
    -- Got text from player's client
    -- some test code -C
    TEST(name .. '->' .. text)
@@ -29,7 +30,7 @@ function got_player_text(name, text)
    end
    local ast, msg = parse(text)
    if not ast then
-      send_player_text(name, msg)
+      server_send(name, msg)
       return nil
    end
 
@@ -43,9 +44,6 @@ function got_player_text(name, text)
 
 end
 
--- this function calls a method in server.cpp to send a message out on the socket connected to the player named by 'name'
-   --Server send
-   --some test code -C
-   c = from_lua(name, text)
-   io.write("from_lua returned '", c, "' -main.lua L:51","\n")
-   --end test code
+
+
+

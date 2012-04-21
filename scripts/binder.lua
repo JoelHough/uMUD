@@ -135,7 +135,7 @@ function bind_and_execute(actor, command)
    DEBUG('Verb is \'' .. verb .. '\'')
    if not get_atom(verb) then
       -- The verb coming in has been vetted already, so only the preposition form is invalid
-      player_text(actor, 'I don\'t know how to ' .. command.verb .. ' things ' .. command.preposition .. ' stuff.')
+      player_text(actor, 'You realize that you don\'t know how to ' .. command.verb .. ' things ' .. command.preposition .. ' stuff.')
       return nil
    end
 
@@ -148,7 +148,7 @@ function bind_and_execute(actor, command)
    elseif not objects then
       DEBUG('Bound ' .. #subjects .. ' subjects')
       if #subjects == 0 then
-         player_text(actor, 'Couldn\'t find anything by that description')
+         player_text(actor, 'You couldn\'t find anything by that description.')
       elseif #subjects > 1 and F{'subject-bind-limit', verb} == 'single' then
          player_text(actor, 'Which one?  Please be more specific.  There are ' .. #subjects .. ' of those here.')
          return nil
@@ -160,7 +160,7 @@ function bind_and_execute(actor, command)
    else
       DEBUG('Bound ' .. #subjects .. ' subjects and ' .. #objects .. ' objects')
       if #subjects == 0 or #objects == 0 then
-         player_text(actor, 'Couldn\'t find anything by that description')
+         player_text(actor, 'You couldn\'t find anything by that description.')
       elseif (#subjects > 1 and F{'subject-bind-limit', verb} == 'single') or (#objects > 1 and F{'object-bind-limit', verb} == 'single') then
          player_text(actor, 'Which one?  Please be more specific.')
          return nil

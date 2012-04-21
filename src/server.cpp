@@ -117,6 +117,7 @@ lua_State* L; //declare the global lua_state variable.
   lua commuication functions added 4/19/12 -C
   *************************************************/
 int to_lua (lua_State *L, string name, string message); //declaration to apease the mighty compiler.
+int to_lua_new_player(lua_State *L, string name);
 /**************************************************
   end lua commuication
   *************************************************/
@@ -489,58 +490,12 @@ void CloseComms ()
  */
 void RemoveInactivePlayers (string n);
 
-/*
- * <COULD BE MADE MORE EFFICIENT>:
- * Take all this code and run it through ONE_FUNCTION
- * that checks the FIRST token -- tell? broadcast? disconnect?
- * .....
- */
 void ActOnPlayerInput(Player *p, string msg)
 {
-    // ********************
-    // <CURRENTLY: Does NOT work until user is logged in***>
-    // See if player wants to Disconnect...
-    vector<string> *input = IsTellToPlayer((msg + " "));
-    vector<string> *broadcast = IsWorldMessage(msg + " ");
-
-    cerr << "input.size() = " << input->size() << endl;
-    cerr << "broadcast.size() = " << broadcast->size() << endl;
-
-    if (msg.find("disconnect") != string::npos)
-    {
-        string goodbye = PROMPT + "Goodbye " + p->Name() + "\n";
-        const char *bye_msg = goodbye.c_str();
-        write(p->GetSocket(), bye_msg, goodbye.size());
-        p->closing = true;
-        // Remove anyone that's left from the playerList
-        close(p->GetSocket()); // Close the Socket
-        RemoveInactivePlayers(p->Name());
-    }
-    /* TEST IMPL 1: Echo Client Messages! */
-    // THE BELOW FUNCTIONS CAN BE SOMEWHAT COMBNIED TO MORE
-    // BETTER CODED.....
-    else if (input->size() > 1 && broadcast->size() < 1)
-    {
-        TryToTellPlayer(p, input);
-    }
-    else if (broadcast->size() >= 1)
-    {
-        MakeWorldBroadcast(broadcast);
-    }
-    else
-    {
-        //added to communicate with lua.main 4/20/12 -C
-        //debug
-        cerr << "calling to lua -server.cpp L:606" << endl;
-        to_lua(L,p->name, msg);
-        //end addtion
-
-        msg = PROMPT + "Echo: " + msg + "\n";
-        //commented this out because not lua is echoing messages back. 4/20/12 -C
-//        const char *echo = msg.c_str();
-//        write(p->GetSocket(), echo, msg.size());
-
-    }
+  if (to_lua(L,p->name, msg) == -1) {
+    string oops = "Everything jerks slightly, as if the world hiccup'd.  You feel you have made the Gods angry.\n";
+    write(p->GetSocket(), oops.c_str(), oops.size());
+  }
 }
 
 
@@ -630,6 +585,7 @@ void ProcessPlayerInput (Player * p, const string & s)
                         string successful_login = ">>>> Welcome " + p->Name() + "\n";
                         const char *success = successful_login.c_str();
                         write(p->GetSocket(), success, successful_login.size());
+                        to_lua_new_player(L, p->Name());
                     }
                     else /* Re-Prompt for login! */
                     {
@@ -922,14 +878,14 @@ void RemoveInactivePlayers (string n)
   lua commuication functions added 4/19/12 -C
   *************************************************/
 /*
-  int from_lua (lua_State *L)
+  int from_lua_send (lua_State *L)
   a function that will be registered in main with the lua state and then can be called from lua.
   lua can provide it any number of arguments and it will push them into a vector.
   as it is written now it only uses the first two args which needs to be a string!! as of now.
   it returns 1 if all goes well if fact it will always return 1 but that give the option
   later to return something else.
   */
-int from_lua (lua_State *L)
+int from_lua_send(lua_State *L)
 {
     int argCount = lua_gettop(L);
     //debug
@@ -940,11 +896,11 @@ int from_lua (lua_State *L)
 
         //debug
         std::cerr << "-- argument " << n << ": "
-                  << lua_tostring(L, n) << " -server.cpp L:154"<< endl;
+                  << lua_tostring(L, n) << "@" << __FILE__ << ":" << __LINE__ << endl;
         values.push_back(lua_tostring(L,n));
     }
     string name = values[0];
-    string message = values[1];
+    string message = values[1] + "\n";
     lua_pop(L,1);
     lua_pushnumber(L,1);// push the number one to indicate success.
     //need to call a function to put send this out to telnet yo!
@@ -952,10 +908,29 @@ int from_lua (lua_State *L)
 
     Player* p = NULL;
     p = GetTargetPlayer(name); //get the pointer to the player by looking up his name
-
+    if (p == NULL) {
+      std::cerr << "Can't find '" << name << "'!" << endl;
+      return 1;
+    }
     write(p->GetSocket(), message.c_str(), message.size()); //send out the message to the player
     values.clear(); // clear out the vector. not necesary but what the hell.
     return 1;
+}
+
+int from_lua_disconnect_player(lua_State *L)
+{
+  string name = lua_tostring(L, 1);
+  lua_pop(L, 1);
+  lua_pushnumber(L, 1);
+  Player *p = GetTargetPlayer(name);
+  string goodbye = PROMPT + "Goodbye " + p->Name() + "\n";
+  const char *bye_msg = goodbye.c_str();
+  write(p->GetSocket(), bye_msg, goodbye.size());
+  p->closing = true;
+  // Remove anyone that's left from the playerList
+  close(p->GetSocket()); // Close the Socket
+  RemoveInactivePlayers(p->Name());
+  return 1;
 }
 
 /*
@@ -980,13 +955,27 @@ int to_lua (lua_State *L, string name, string message)
 
     if (lua_pcall(L, 2, 0, 0) != 0) //do the call (2 arguments, 0 result) if it fails.. report it.
     {
-        cerr << "error running function `f': " << lua_tostring(L, -1) << endl;
+        cerr << "error running function 'got_player_text': " << lua_tostring(L, -1) << endl;
         return -1;
     }
     //no need to pop anything off because pcall didn't return and results.
     return 1; // return success
 }
 
+int to_lua_new_player(lua_State *L, string name)
+{
+  lua_getglobal(L, "new_player");
+  if (!lua_isfunction(L, -1)) {
+    lua_pop(L, 1);
+    return -1;
+  }
+  lua_pushstring(L, name.c_str());
+  if (lua_pcall(L, 1, 0, 0) != 0) {
+    cerr << "error running function 'new_player': " << lua_tostring(L, -1) << endl;
+    return -1;
+  }
+  return 0;
+}
 /*
   void report_errors(lua_State *L, int status)
   this function will cerr out an error in the lua set up if there is one and then pops
@@ -1056,15 +1045,16 @@ int main ()
     db->initialize();
     L = luaL_newstate(); //initialize the lua state to be used until the game shuts down.
 
-    //    const char* path = "../scripts/main.lua"; // the relative path that should work normally
-    const char* path = "../../../../uMUD/scripts/main.lua"; // the relative path i need to use at home -C
+    const char* path = "../scripts/main.lua"; // the relative path that should work normally
+    // const char* path = "../../../../uMUD/scripts/main.lua"; // the relative path i need to use at home -C
 
 
 
     luaL_openlibs(L); //open the libs. I think this will open them all.
 
     // make from_lua(lua_State *L) available to Lua functions
-    lua_register(L, "from_lua", from_lua);
+    lua_register(L, "server_send", from_lua_send);
+    lua_register(L, "server_disconnect_player", from_lua_disconnect_player);
 
     if(luaL_dofile(L, path) != 0) // if there are no errors luaL_dofile() will rerturn 0
     {
