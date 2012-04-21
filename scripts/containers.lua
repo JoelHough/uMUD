@@ -1,22 +1,8 @@
-require'types'
-require'functions'
-
-local function move_thing(thing, new_container)
-   if thing.container then
-      local from = thing.container.contents
-      for i, v in ipairs(from) do
-         if v == thing then
-            table.remove(from, i)
-            break
-         end
-      end
+function move_content(content, new_container)
+   if content.container then
+      local from = content.container.contents
+      table.remove_item(from, content)
    end
-   thing.container = new_container
-   table.insert(new_container.contents, thing)
+   content.container = new_container
+   table.insert(new_container.contents, content)
 end
-
-add_atoms{[{'container', 'contents'}]='noun', put='preposition', 'put-in'}
-
-add_functions{
-   ['put-in thing container'] = move_thing,
-             }

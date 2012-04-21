@@ -10,15 +10,16 @@ require'types'
 require'lpeg'
 require'log'
 require'utils'
+--require'things'
 
 local new_atoms = {'preposition', 'noun', 'noun-preposition', 'verb', 'adjective', 'adverb', 'pronoun', 'thing-id'}
-add_atoms(new_atoms)
+add_atoms{[new_atoms]='word'}
 
 -- Separated for convenience
 local conjunctions = {'and', 'then'}
 local articles = {'a', 'the'}
-add_atoms{[conjunctions]='conjunctions'}
-add_atoms{[articles]='articles'}
+add_atoms{[conjunctions]='conjunction', conjunction='word'}
+add_atoms{[articles]='article', article='word'}
 
 
 local errpos = 0
@@ -50,10 +51,13 @@ local is_adverb = is_atom('adverb')
 local is_adjective = is_atom('adjective')
 local is_pronoun = is_atom('pronoun')
 
--- Might need this later if name lookups get more complicated
---local function is_pronoun(text, pos, cap)
---   return is_child_of(cap, 'pronoun'), cap
---end
+-- local function is_pronoun(text, pos, cap)
+--    DEBUG('Getting thing \'' .. cap .. '\'')
+--    if get_thing(cap) then
+--       return true, cap
+--    end
+--    return is_child_of(cap, 'pronoun'), cap
+-- end
 
 local function is_in(...)
    local words = ...
@@ -79,7 +83,7 @@ local sentence_end = S'.;'
 local line_end = P(-1)
 local sep = S' ,'
 
-local word = (R'AZ' + R'az')^1 / string.lower
+local word = (R'AZ' + R'az' + R'01')^1 / string.lower
 
 local function word_that(f)
    return Cmt(word, f)
@@ -144,6 +148,16 @@ end
 function parse_phrase(text)
    reset_error()
    local match = noun_phrase:match(text)
+   local msg = ''
+   if not match then
+      msg = error_message(text)
+   end
+   return match, msg
+end
+
+function parse_command(text)
+   reset_error()
+   local match = Ct(command):match(text)
    local msg = ''
    if not match then
       msg = error_message(text)

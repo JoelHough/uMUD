@@ -11,6 +11,10 @@ local function add_function_(atoms, func, funcs, level)
       funcs[1] = func
    else
       local atom = atoms[level]
+      if not get_atom(atom) then
+         WARNING('Implicitly creating atom \'' .. atom .. '\' during function definition')
+         add_atom(atom)
+      end
       if not funcs[atom] then funcs[atom] = {} end
       add_function_(atoms, func, funcs[atom], level + 1)
    end
@@ -101,3 +105,21 @@ function get_function(atoms)
    return f
 end
 F = get_function
+
+function get_member(name, thing)
+   local func = get_function{name, thing}
+   if not func then
+      ERROR('No member function \'' .. name .. '\' found!')
+      return nil
+   elseif type(func) ~= 'function' then
+      WARNING('Member \'' .. name .. '\' is not a function')
+      return func
+   else
+      return func(thing)
+   end
+end
+M = get_member
+
+function do_to(func_name, doer, doee)
+   return get_function{func_name, doer, doee}(doer, doee)
+end

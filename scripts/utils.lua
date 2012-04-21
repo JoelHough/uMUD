@@ -1,3 +1,12 @@
+function table.remove_item(t, item)
+   for i, v in ipairs(t) do
+      if v == item then
+         table.remove(t, i)
+         break
+      end
+   end
+end
+
 function table.reverse_value_string(t, sep)
    local result = ''
    if #t > 0 then

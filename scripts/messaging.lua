@@ -3,11 +3,15 @@ local function name_replace(text, name, with)
 end
 
 function player_text(player, text)
-   server_send(player.name, name_replace(text, player.name, 'yourself'))
+   local player_name = M('name', player)
+   server_send(player_name, name_replace(text, player_name, 'yourself'))
 end
 
 function witness_text(player, text)
-   for _, witness in ipairs(get_objects_from_phrase(player.container, parse_phrase('player except ' .. player.name))) do
-      server_send(witness.name, name_replace(text, witness.name, 'you'))
+   local player_name = M('name', player)
+   local container = M('container', player)
+   for _, witness in ipairs(bind_from_container(container, parse_phrase('player except ' .. player_name))) do
+      local witness_name = M('name', witness)
+      server_send(witness_name, name_replace(text, witness_name, 'you'))
    end
 end
