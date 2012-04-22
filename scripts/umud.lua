@@ -16,8 +16,8 @@ add_atoms{muderator='player',
          }
 
 require'players'
-local god = add_player('God', {types={'muderator'}})
-local force = add_player('A mysterious force', {types={'muderator'}})
+local god = get_thing('God') or add_player('God', {types={'muderator'}})
+local force = get_thing('A mysterious force') or add_player('A mysterious force', {types={'muderator'}})
 local function force_do(command)
    local ast, msg = parse_command(command)
    printTable(ast, DEBUG)
@@ -101,7 +101,7 @@ add_functions{
    end,
              }
 
-local void = add_room('void', 'The Void', 'A formless, black emptiness.')
+local void = get_thing('void') or add_room('void', 'The Void', 'A formless, black emptiness.')
 force_do('whisk God to the Void')
 
 -- Creating things
@@ -164,8 +164,8 @@ add_atoms{say='verb', to='preposition'}
 add_functions{
    ['subject-bind-search say'] = 'none',
    ['player say string-type'] = function(player, msg)
-      player_text(player, 'You say "' .. msg.string .. '".')
-      witness_text(player, M('indefinite', player) .. ' says "' .. msg.string .. '".')
+      player_text(player, 'You say "' .. msg.string .. '"')
+      witness_text(player, M('indefinite', player) .. ' says "' .. msg.string .. '"')
    end,
    ['subject-bind-search say-to'] = 'none',
    ['player say-to string-type thing'] = function(player, msg, thing)
