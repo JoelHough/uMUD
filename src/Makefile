@@ -7,7 +7,7 @@ LUA_DIR         = ../lib/lua-5.1.5
 CC              = g++
 CFLAGS          = -g -Wall -pedantic -I$(LUA_DIR)/include -L$(LUA_DIR)/lib
 CPPFLAGS        = $(CFLAGS)
-OBJS		= server.o dbase.o sqlite3.o lpeg.o
+OBJS		= server.o dbase.o sqlite3.o lpeg.o Player.o lua_io.o main.o
 LIBS            = -llua -lpthread -ldl
 EXE		= server
 #

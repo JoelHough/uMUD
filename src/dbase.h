@@ -7,14 +7,11 @@
   machine and linking it at compile time with "-lsqlite3" If you can't find it
   you will have to download the amalgamation from http://www.sqlite.org/download.html
   otherwise good luck with all the linker errors.
-  note- the commenting is very incomplete in this version but will
-  improve with time. -C
   */
 #ifndef DBASE_H
 #define DBASE_H
 
 #include <string>
-#include <vector>
 #include <sqlite3.h>
 
 class dBase
@@ -23,15 +20,15 @@ public:
     dBase();
     ~dBase();
 
-    bool open(const char *filename);
-    std::vector<std::vector<std::string> > query(const char *query);
-    void close();
     bool initialize();
-    bool queryLogin(std::string name, std::string password);
-    void newUser(std::string name, std::string password);
+    bool checkLogin(std::string name, std::string password);
+    bool newUser(std::string name, std::string password);
+  bool userExists(std::string name);
 
 private:
-    sqlite3 *db;
+  bool open(const char *filename);
+  void close();
+  sqlite3 *db;
 };
 
 #endif // DBASE_H
