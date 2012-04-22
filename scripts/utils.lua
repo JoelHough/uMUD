@@ -1,3 +1,7 @@
+function capitalize(str)
+   return str:sub(1,1):upper() .. str:sub(2)
+end
+
 -- from Rosetta code
 function strip_extended( str )
     local s = ""

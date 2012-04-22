@@ -53,7 +53,11 @@ add_functions{
 -- Being in things, including rooms
 require'containers'
 require'rooms'
-add_atoms{room={'container', 'thing'}, [{'look', 'whisk', 'name'}]='verb', [{'to', 'as'}]='preposition'}
+add_atoms{room={'container', 'thing'}, [{'look', 'whisk', 'rename', 'describe'}]='verb', [{'to', 'as'}]='preposition'}
+
+function witness_change(muderator)
+   witness_text(muderator, M('indefinite', muderator) .. ' stares off into space, deep in thought.  A cat walks by.  The same cat?')
+end
 
 add_functions{
    ['container thing'] = function(thing) return thing.container end,
@@ -80,6 +84,22 @@ add_functions{
          player_text(player, M('place-text', container))
       end
       return true
+   end,
+   ['subject-bind-search rename-to'] = 'global',
+   ['object-bind-search rename-to'] = 'none',
+   ['subject-bind-limit rename-to'] = 'single',
+   ['muderator rename-to thing string-type'] = function(muderator, thing, name)
+      player_text(muderator, 'You decide that \'' .. name.string .. '\' is a more fitting name for that.  The universe agrees.')
+      witness_change(muderator)
+      thing.name = name.string
+   end,
+   ['subject-bind-search describe-as'] = 'global',
+   ['object-bind-search describe-as'] = 'none',
+   ['subject-bind-limit describe-as'] = 'single',
+   ['muderator describe-as thing string-type'] = function(muderator, thing, desc)
+      player_text(muderator, 'You think that would be a more fitting description.  The universe agrees.')
+      witness_change(muderator)
+      thing.long_desc = desc.string
    end,
    ['subject-bind-search whisk-to'] = 'global',
    ['object-bind-search whisk-to'] = 'global',
@@ -150,14 +170,30 @@ add_functions{
    ['object-bind-limit create-to'] = 'single',
    ['muderator create-to portal room'] = function(muderator, portal_phrase, room)
       printTable(room, DEBUG)
-      local id = create_thing('portal', {types={'portal'}, exit=room.id})
-      do_to('put-in', get_thing(id), M('container', muderator))
-      player_text(muderator, 'You concentrate on punching a hole to another place. A portal opens before you! You decide to call it \'' .. id .. '\'.')
-      witness_text(muderator, M('indefinite', muderator) .. ' stares into space with a piercing gaze. A portal opens before him!')
+      local id = create_thing(portal_phrase.noun, {types={portal_phrase.noun}, exit=room.id})
+      local portal = get_thing(id)
+      do_to('put-in', portal, M('container', muderator))
+      local portal_text = capitalize(M('indefinite', portal))
+      player_text(muderator, 'You concentrate on connecting to another place. ' .. portal_text .. ' appears before you! You decide to call it \'' .. id .. '\'.')
+      witness_text(muderator, M('indefinite', muderator) .. ' stares into space with a piercing gaze.  ' .. portal_text .. ' appears before them!')
       return true
    end
              }
 
+-- Cliff!
+add_atoms{cliff="portal"}
+add_functions{
+   ['name cliff'] = function(cliff) return 'steep cliff' end,
+   ['player go cliff'] = function(player, portal)
+      player_text(player, 'You get a running start and leap off ' .. M('definite', portal) .. "!\nYou tumble down to the bottom!")
+      local p_name = M('indefinite', player)
+      witness_text(player, p_name .. ' takes a running leap off ' .. M('indefinite', portal) .. '!')
+      do_to('put-in', player, get_thing(M('exit', portal)))
+      witness_text(player, p_name .. ' comes tumbling down ' .. M('indefinite', portal) .. '!  They land hard, and after a momentm stand and dust themself off,')
+      F{player, 'look'}(player)
+      return true
+   end
+             }
 -- Talking and other pleasantries
 add_atoms{[{'say', 'dance', 'apologize', 'bark', 'bmoc', 'combhair', 'slap', 'flex', 'nod', 'relax', 'bow', 'cheer', 'grin', 'chuckle'}]='verb', to='preposition'}
 
@@ -193,7 +229,7 @@ add_functions
 	add_atoms{ bmoc = 'verb' };
       	end,
       ['player combhair'] = function(player)
-        witness_text(player, M('indefinite', player)..' combs his/her own		hair.');
+        witness_text(player, M('indefinite', player)..' combs his/her own hair.');
 	player_text(player, 'You comb your own hair.');
 	add_atoms{ combhair = 'verb' };
       	end,
@@ -203,7 +239,7 @@ add_functions
 	player_text(p1, 'You comb ' .. M('indefinite', p2) .. '\'s hair.');
       	end,
       ['player flex'] = function(player)
-        witness_text(player, M('indefinite', player)..' flexes his muscles		. So strong!');
+        witness_text(player, M('indefinite', player)..' flexes his muscles. So strong!');
 	player_text(player, 'You flex your muscles. So strong!');
 	add_atoms{ flex = 'verb' };
       	end,
