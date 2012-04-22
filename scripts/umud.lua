@@ -170,35 +170,34 @@ add_functions
    end,
    ['subject-bind-search say-to'] = 'none',
    ['player say-to string-type thing'] = function(player, msg, thing)
-      player_text(player, 'You say "' .. msg.string .. '" to ' .. M('defin		ite',	thing) .. '.')
-      witness_text(player, M('indefinite', player) .. ' says "' .. msg.str		ing .. '" to ' .. M('indefinite', thing) .. '.')
+      player_text(player, 'You say "' .. msg.string .. '" to ' .. M('definite',	thing) .. '.')
+      witness_text(player, M('indefinite', player) .. ' says "' .. msg.string .. '" to ' .. M('indefinite', thing) .. '.')
       end,
-// -B 
+      ['subject-bind-search dance'] = 'none',
       ['player dance'] = function(player)
-        witness_text(player, M('indefinite', player)..' bursts into dance.		'); 
-        player_text(player, 'You burst into dance.');
-        add_atoms{ dance = 'verb' };
-      end,
+        player_text(player, 'You burst into dance.')
+        witness_text(player, M('indefinite', player)..' bursts into dance.')
+        add_atoms{dance='verb'}
+      	end,
       ['player relax'] = function(player)
         witness_text(player, M('indefinite', player)..' sits down, loungin		g with complete abandon.');
-	player_text(player, 'You sit down and lounge with complete abandon		 .');
+	player_text(player, 'You sit down and lounge with complete abandon.');
 	add_atoms{ relax = 'verb' };
-      end,
+      	end,
       ['player bmoc'] = function(player)
-        witness_text(player, M('indefinite', player)..' is the Big Man On		Campus!');
-	player_text(player, 'You're the Big Man On Campus!');
+        witness_text(player, M('indefinite', player)..' is the Big Man On Campus!');
+	player_text(player, 'You\'re the Big Man On Campus!');
 	add_atoms{ bmoc = 'verb' };
-      end,
+      	end,
       ['player combhair'] = function(player)
         witness_text(player, M('indefinite', player)..' combs his/her own		hair.'		);
 	player_text(player, 'You comb your own hair.');
 	add_atoms{ combhair = 'verb' };
       end,
-      // Comb another player's hair
       ['player combhair player'] = function(p1, p2)
-        witness_text(p1, M('indefinite, p1) .. ' combs ' .. 
-			 M('indefinite', p2)..''s hair.');
-	player_text(p1, 'You comb ' .. M('indefinite', p2) .. ''s hair.');
+        witness_text(p1, M('indefinite', p1) .. ' combs ' .. 
+			 M('indefinite', p2)..'\'s hair.');
+	player_text(p1, 'You comb ' .. M('indefinite', p2) .. '\'s hair.');
       end,
       ['player flex'] = function(player)
         witness_text(player, M('indefinite', player)..' flexes his muscles		. So strong!');
@@ -222,8 +221,7 @@ add_functions
       ['player bark player'] = function(p1, p2)
         witness_text(p1, M('indefinite', p1) .. ' barks at ' .. 
 			 M('indefinite', p2) .. '. Woof woof!');
-	player_text(p1, 'You bark at ' .. M('indefinite', p2) .. '. 
-			Woof woof!');
+	player_text(p1, 'You bark at ' .. M('indefinite', p2) .. '. Woof woof!');
       end,
       ['player bow'] = function(p)
         witness_text(p, M('indefinite', p) .. ' bows with great honor.');
@@ -231,8 +229,8 @@ add_functions
 	add_atoms { bow = 'verb' };
       end,
       ['player bow player'] = function(p1, p2)
-        witness_text(p1, M('indefinite', p1) .. ' bows with great honor
-			 to ' .. M('indefininte, p2) .. '.');
+        witness_text(p1, M('indefinite', p1) .. ' bows with great honor to ' 
+			 .. M('indefininte', p2) .. '.');
 	player_text(p1, 'You bow to ' .. M('indefinite', p2) .. '.');
       end,
       ['player apologize'] = function(p)
@@ -262,9 +260,8 @@ add_functions
 	add_atoms { grin = 'verb' };
       end,
       ['player grin player'] = function(p1, p2)
-        witness_text(p1, M('indefinite', p1) .. ' grins at you. He knows
-			 ...');
-	player_text(p1, 'You grin at ' .. M('indefinite', p2) .. '. You kn		ow...');
+        witness_text(p1, M('indefinite', p1) .. ' grins at you. He knows...');
+	player_text(p1, 'You grin at ' .. M('indefinite', p2) .. '. You know...');
       end,
       ['player chuckle'] = function(p)
         witness_text(p, 'Chuckles good-naturedly.');
@@ -272,14 +269,12 @@ add_functions
 	add_atoms { chuckle = 'verb' };
       end,
       ['player chuckle player'] = function(p1, p2)
-        witness_text(p1, M('indefinite', p1) .. ' chuckles at you, full of		mirth!');
-	player_text(p1, 'You chuckle at ' .. M('indefinite', p2) .. ', 
-			full of mirth!');
+        witness_text(p1, M('indefinite', p1) .. ' chuckles at you, full of mirth!');
+	player_text(p1, 'You chuckle at ' .. M('indefinite', p2) .. ', full of mirth!');
       end,
       ['player slap'] = function(player)
-        witness_text(player, M('indefinite', player)..' slaps himself with		a trout. Ouch!');
+        witness_text(player, M('indefinite', player)..' slaps himself with a trout. Ouch!');
 	player_text(player, 'You slap yourself with a trout. Ouch!');
 	add_atoms{ slap = 'verb' };
       end
-// end -B
 }
