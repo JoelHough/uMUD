@@ -17,7 +17,6 @@
    2- That file's table entires are iterated through.
    3- Using add_atoms, the nested tables are added into the heirarchy.
    4- At the bottom of each nesting, there are base things/containers with flavor text descriptions. These are then created and placed into the game.
-
    Joel's comments:
 
    I think, for the world builder, it would be easier if you split type making and instance making into two parts. 
@@ -35,44 +34,88 @@
    --]]
 
 
+--Main function. Does all of the heavy lifting.
 function buildWorld(file)
    dofile(file)
+   gameData = { } -- Table containing ID's of all the stuff created in this new 'game'
    local types = { Things, Containers }  -- CURRENT EXPECTED FORMAT FOR INPUT FILE
    local instances = { } -- Table housing the actual instances of the things created. 
 
    for k,v in pairs(types) do
-      worldHelper(v);
+      typeBuilder(v);
    end
-   instanceBuilder(instances)
+
+   --TODO: Rooms, Portals, Functions, Things.
 end
 
+-- Atom building from everything in supplied .lua file.
 function typeBuilder(t, parent)
    for k,v in pairs(t) do
+     local name = tostring(k).lower(k)
       if (type(v) == "table") then
-	 DEBUG("Adding: " .. tostring(k).lower(k))
-	 add_atom(tostring(k).lower(k))
+
+	 DEBUG("Adding: " .. name)
+	 table.insert(instances, name) -- Add this to things to be created.
+	 add_atom(name)
 	 if parent then
-	    add_parent(tostring(k).lower(k), parent)
-	    worldHelper(v, tostring(k).lower(k))
+	    add_parent(name, parent)
+	    typeBuilder(v, name)
 	 else
-	    worldHelper(v, k)
+	    typeBuilder(v, k)
 	 end
 	 
       else
-	 DEBUG(tostring(k).lower(k) .. ' description '  .. '=' .. v)
-
+	 DEBUG(name .. ' description '  .. '=' .. v)
 	 -- Instance Handling:
-	 table.insert(instances, k)
+	 table.insert(instances, k )
+      end
+   end
+end
+
+-- Creates containers.
+function containerBuilder(containers, parent)
+   for k,v in pairs(containers) do
+      local name = tostring(k).lower(k)
+      if (type(v) == "table") then
+	 --call helper? or somehow associate this shit.
+	 if parent then
+	    add_room(name, name, v or "A non-descript container")
+	    containerBuilder(v, name) -- Recursive call, create portals while you're at it.
+	 end
       end
    end
 end
 
 
--- Uses add_thing to create instances of stuff in the game. Doesn't really do anything else. At this point, the muderator needs to make stuff 
+-- Links to rooms.
+function portalBuilder()
+   --Iterate through PORTALS field of .lua file, create define portal exits.
+   --Since portals are just things, create one in the room, and set portal.exit to parent's room.id.
+   --Remember, that portals can be doors and shit, since it's just a thing.
+
+end
+
+-- Uses add_thing to create instances of stuff in the game. Doesn't really do anything else. At this point, the muderator needs to make stuff
+--[[ Don't like this function, because it creates things and doesn't really tell them where to go. It'd be more beneficial to create instances of CONTAINERS, and place THINGS inside them. 
 function instanceBuilder(instances)
    for k,v in pairs(instances) do
-      if add_thing(k, v) then
-	 DEBUG("Successfully added " .. k .. " into the game.")
-      end
+       -- Create_things has an empty list passed in, because I don't know what to do with it atm.
+      table.insert(gameData, { id = create_thing(v, { }), descripton = v } )
+      
    end   
 end
+   --]]
+
+
+-- Function creator. Uses all of the values in Words to create functions for Things and Containers.
+function functionBuilder()
+   --TODO.
+end
+
+
+
+
+
+
+
+

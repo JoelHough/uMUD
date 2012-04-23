@@ -34,8 +34,23 @@ function got_player_text(name, text)
       return nil
    end
 
-   for _, sentence in ipairs(ast.sentences) do
-      for _, command in ipairs(sentence.commands) do
+   if ast.sentences then
+      for _, sentence in ipairs(ast.sentences) do
+         for _, command in ipairs(sentence.commands) do
+            bind_and_execute(player, command)
+         end
+      end
+   else
+      if ast.eval then
+         command = {verb='eval', subject={groups={{string=ast.eval}}}}
+      elseif ast.emote then
+         command = {verb='emote', subject={groups={{string=ast.emote}}}}
+      elseif ast.say then
+         command = {verb='say', subject={groups={{string=ast.say}}}}
+      elseif ast.sayto then
+         command = {verb='say', preposition='to', subject={groups={{string=ast.text}}}, object=ast.sayto}
+      end
+      if command then
          bind_and_execute(player, command)
       end
    end

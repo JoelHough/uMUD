@@ -133,7 +133,12 @@ local command = Cg(adverbs, 'adverbs1') * Cg(verb, 'verb') * Cg(adverbs, 'adverb
    + Cg(adverbs, 'adverbs1') * Cg(preposition, 'preposition') * Cg(noun_phrase, 'object') * Cg(adverbs, 'adverbs2') * Cg(verb, 'verb') * Cg(adverbs, 'adverbs3') * Cg(noun_phrase, 'subject') * Cg(adverbs, 'adverbs4')
 local sentence = Ct(Cg(Ct(Cmt(Ct(command), combine_adverbs) * Cmt(Ct(Cg(conjunction, 'conjunction') * command), combine_adverbs)^0), 'commands'))
 
-local input = Ct(Cg(Ct(Cg(sentence) * (sentence_end * Cg(sentence))^0 * sentence_end^0 * line_end), 'sentences'))
+local speakat = S"@" * Cg(noun_phrase, 'sayto') * P' ' * Cg(P(1)^0, 'text') * line_end
+local speak = S"'" * Cg(P(1)^0, 'say') * line_end
+local emote = S"/" * Cg(P(1)^0, 'emote') * line_end
+local eval = S"`" * Cg(P(1)^0, 'eval') * line_end
+
+local input = Ct(speakat) + Ct(speak) + Ct(emote) + Ct(eval) + Ct(Cg(Ct(Cg(sentence) * (sentence_end * Cg(sentence))^0 * sentence_end^0 * line_end), 'sentences'))
 
 local function error_message(text)
    return 'Huh?  I ran into trouble about here: ' .. text:sub(0, errpos - 1) .. '>>>' .. text:sub(errpos) ..
