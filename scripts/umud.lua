@@ -180,31 +180,29 @@ add_functions{
    end
              }
 
-<<<<<<< HEAD
 -- ***************************************************************************
-add_atoms { [{'north', 'east', 'south', 'west'}] = 'noun' }
+add_atoms { [{'north', 'east', 'south', 'west'}]="portal" }
 add_functions
 {
-	['muderator create-to portal north'] = function(muderator)
-	  -- Create a room to be "the northern room"
-	  local room = add_room()
-	  -- Create portal with name "north", link to room arg
-	  local roomID = create_thing('portal', {types={'portal', 'north'}, exit=room.id})
-	  -- Put the portal in the room the Muderator is in
-	  do_to('put-in', get_thing(roomID), M('container', muderator))
-	  -- DEBUG
-	  player_text(player, 'Northern Path -- ' .. M('indefinite', portal))
-	  end,
-	['player go north'] = function(player)
- 	  local container = M('container', player)
-	  local portal = M('portal', container)
-	  if portal.name=='north portal' then
-	     do_to('put-in', get_thing(portal.id), M('container', player))
-	     player_text(player, 'You travel north...')
-	     witness_text(player, M('indefinite', player) .. ' travels north.')
-	  else 
-	     player_text(player, 'There is no path North.')
-	  end
+	['player go north'] = function(player, portal)
+	  player_text(player, 'You travel north...')
+	  witness_text(player, M('indefinite', player) .. ' travels north.')
+	  do_to('put-in', player, get_thing(M('exit', portal)))
+	end,
+	['player go east'] = function(player, portal)
+	  player_text(player, 'You travel east...')
+	  witness_text(player, M('indefinite', player) .. ' travels east.')
+	  do_to('put-in', player, get_thing(M('exit', portal)))
+	end,
+	['player go south'] = function(player, portal)
+	  player_text(player, 'You travel south...')
+	  witness_text(player, M('indefinite', player) .. ' travels south.')
+	  do_to('put-in', player, get_thing(M('exit', portal)))
+	end,
+	['player go west'] = function(player, portal)
+	  player_text(player, 'You travel west...')
+	  witness_text(player, M('indefinite', player) .. ' travels west.')
+	  do_to('put-in', player, get_thing(M('exit', portal)))
 	end
 }			 
 
@@ -219,8 +217,6 @@ add_functions
 
 
 -- ****************************************************************************
-
-=======
 -- Cliff!
 add_atoms{cliff="portal"}
 add_functions{
@@ -235,7 +231,8 @@ add_functions{
       return true
    end
              }
->>>>>>> 32bdca9d91946f2f2edc7b3fee1274ce24c40a04
+
+
 -- Talking and other pleasantries
 add_atoms{[{'say', 'dance', 'apologize', 'bark', 'bmoc', 'combhair', 'slap', 'flex', 'nod', 'relax', 'bow', 'cheer', 'grin', 'chuckle'}]='verb', to='preposition'}
 
