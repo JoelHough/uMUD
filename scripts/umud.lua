@@ -25,7 +25,7 @@ local function force_do(command)
 end
 
 require'things'
-add_atoms{eval='verb'}
+add_atoms{eval='verb', hotpatch='verb'}
 add_functions{
    ['connect player'] = function(player)
       force_do('whisk ' .. player.id .. ' to the Void')
@@ -53,6 +53,18 @@ add_functions{
       server_disconnect_player(player.id)
    end,
    ['subject-bind-search eval'] = 'none',
+   ['muderator hotpatch'] = function(muderator)
+      player_text(muderator, "You begin reciting the arcane rite from the Book of Creation.  You feel the power of the universe soaking into you.")
+      witness_text(muderator, M('indefinite', muderator) .. ' begins chanting in an ancient, powerful tongue.  A blow glow swells and envelopes them.')
+      if os.execute('git pull') ~= 0 then
+         player_text(muderator, "*CRACK*\nThe energy flees, leaving you drained.  Maybe the moon is in the wrong phase?")
+         witness_text(muderator, "You here a tremendous *CRACK* as the blow glow rushes from " .. M('indefinite', muderator) .. '.  You get the feeling that whatever was happening did not go well.')
+      else
+         dofile'hotpatch.lua'
+         player_text(muderator, "*FWOOSH*\nThe energy flies from you, altering the very fabric of time and space!")
+         witness_text(muderator, "You here a tremendous *FWOOSH* as the blow glow rushes from " .. M('indefinite', muderator) .. ', washing over you.  You get the feeling that whatever was happening, the world will never be the same.')
+      end
+   end,
    ['muderator eval string-type'] = function(muderator, cmd)
       player_text(muderator, "Your words run deep.")
       loadstring(cmd.string)()
