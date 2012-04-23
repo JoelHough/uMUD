@@ -249,7 +249,7 @@ add_functions
 	add_atoms { nod = 'verb' };
       	end,
       ['player nod player'] = function(p1, p2)
-        witness_text(p1, M('indefinite', player) .. ' nods at you.');
+        witness_text(p1, M('indefinite', p2) .. ' nods at you.');
 	player_text(p1, 'You nod at ' .. M('indefinite', p2) .. '.');
       	end,
       ['player bark'] = function(p)
