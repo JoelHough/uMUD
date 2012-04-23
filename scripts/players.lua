@@ -31,9 +31,10 @@ end
 -- If adding, say, money --> Will need to check current balance and add to!....
 function add_to_inventory(id, item)
 	local player = get_player(id)
-	
-	table.insert(player.inventory, item.id)
+	local original_container = M('container', player)	
 
+	-- Put the item in the player's inventory-table
+	table.insert(player.inventory, item.id)
 
 	--player.itemsCount = player.itemsCount + 1
 	local player = get_thing(id)

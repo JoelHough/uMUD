@@ -7,6 +7,9 @@ function remove_content(content)
 end
 
 function move_content(content, new_container)
+	
+   DEBUG('<><><><><>move_content() CALLED')
+
    remove_content(content)
    content.container = new_container
    table.insert(new_container.contents, content)

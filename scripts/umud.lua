@@ -86,7 +86,7 @@ add_functions{
    end,
    ['put-in thing container'] = move_content,
    -- <><><>
-   ['put-in item container'] = move_content,
+   --['put-in item container'] = move_content,
    ['player look'] = function(player)
       local container = M('container', player)
       if not container then
@@ -136,6 +136,7 @@ local void = get_thing('void') or add_room('void', 'The Void', 'A formless, blac
 force_do('whisk God to the Void')
 
 -- Creating things
+-- <Adding carryables> ~ "item" --> put in the list below!
 add_atoms{create='verb', item='thing', [{'rock', 'coin'}] = 'item'}
 add_functions{
    ['subject-bind-search create'] = 'none',
@@ -159,7 +160,6 @@ add_functions{
 		-- <Item_Thing ~ nil> DEBUG
 		DEBUG('ITEM-THING --> <' .. item_thing.name .. '>')
 		-- ------------------------
-
 		local container = M('container', muderator)
       		do_to('put-in', item_thing, container)
       		player_text(muderator, 'You will ' .. M('indefinite', item_thing.name) .. ' into being.')
@@ -258,6 +258,8 @@ add_functions
 		open_inventory(player.name)
 	end,
 	['player get item'] = function(player, item)
+		-- Remove item from original container
+		remove_content(item)
 		add_to_inventory(player.name, item)
 	end
 }
