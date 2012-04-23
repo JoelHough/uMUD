@@ -289,6 +289,16 @@ add_atoms{[{'say', 'dance', 'apologize', 'bark', 'bmoc', 'combhair', 'slap', 'fl
 
 add_functions
 {
+   ['subject-bind-search emote'] = 'none',
+   ['player emote string-type'] = function(player, msg)
+      local text = M('indefinite', player)
+      if msg.string:sub(1,1) ~= "'" then
+         text = text .. ' '
+      end
+      text = text .. msg.string
+      player_text(player, text)
+      witness_text(player, text)
+   end,
    ['subject-bind-search say'] = 'none',
    ['player say string-type'] = function(player, msg)
       player_text(player, 'You say "' .. msg.string .. '"')

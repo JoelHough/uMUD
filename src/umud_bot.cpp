@@ -318,8 +318,11 @@ void process_room_umud_command(string command, string nick)
 
 void process_player_command(IrcPlayer *player, string command)
 {
-  // TODO: Handle ACTION->emote conversion
-  player->out_buf += command + "\n";
+  if (boost::starts_with(command, "ACTION")) {
+    player->out_buf += "/" + command.substr(7) + "\n";
+  } else {
+    player->out_buf += command + "\n";
+  }
 }
 
 void irc_process_line(string line)
