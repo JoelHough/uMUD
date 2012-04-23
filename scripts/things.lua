@@ -22,6 +22,9 @@ function add_thing(name, data)
    data.id = id
    things[id] = data
    add_atoms{[id]='pronoun'}
+
+   DEBUG('get_thing --> <' .. id .. '>')
+
    return id
 end
 

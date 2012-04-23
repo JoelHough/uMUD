@@ -33,8 +33,17 @@ add_functions{
    ['everything'] = things,
    ['detail thing'] = function(thing) return thing.long_desc or 'It is very non-descript.' end,
    ['name thing'] = function(thing) return thing.name or 'nameless thing' end,
+   -- *************************
+   ['name rock'] = function(rock) return 'rock' end,	
+   ['name coin'] = function(coin) return 'coin' end,
+   -- *************************
+
    ['definite thing'] = function(thing) return 'the ' .. M('name', thing) end,
    ['indefinite thing'] = function(thing) return 'a ' .. M('name', thing) end, -- TODO 'an'
+
+   -- *************************
+   ['indefinite item'] = function(item) return 'a ' .. M('name', item) end,
+   -- *************************
    ['definite player'] = function(player) return M('name', player) end,
    ['indefinite player'] = function(player) return M('name', player) end,
    ['player disconnect'] = function(player)
@@ -76,6 +85,7 @@ add_functions{
       return title .. "\n" .. hr .. "\n" .. detail .. content_list
    end,
    ['put-in thing container'] = move_content,
+   ['pit-in item container'] = move_content,
    ['player look'] = function(player)
       local container = M('container', player)
       if not container then
@@ -125,7 +135,7 @@ local void = get_thing('void') or add_room('void', 'The Void', 'A formless, blac
 force_do('whisk God to the Void')
 
 -- Creating things
-add_atoms{create='verb'}
+add_atoms{create='verb', item='thing', [{'rock', 'coin'}] = 'item'}
 add_functions{
    ['subject-bind-search create'] = 'none',
    ['muderator create thing'] = function(muderator, thing_group)
@@ -137,6 +147,25 @@ add_functions{
       player_text(muderator, 'You will ' .. M('indefinite', thing) .. ' into being.')
       witness_text(muderator, M('indefinite', muderator) .. ' concentrates for a moment. Before your very eyes, ' .. M('indefinite', thing) .. ' appears!')
    end,
+-- Creating Items
+-- *****************************
+	['muderator create item'] = function(muderator, i)
+		DEBUG('Create_Item called...')
+		--local item = add_item()
+		--table.insert('item', i.noun)
+		local types = i.adjectives
+		local item_thing = get_thing(create_thing(i.noun, {types=types, name=i.noun}))
+		-- <Item_Thing ~ nil> DEBUG
+		DEBUG('ITEM-THING --> <' .. item_thing.name .. '>')
+		-- ------------------------
+
+		local container = M('container', muderator)
+      		--do_to('put-in', item_thing, container)
+      		player_text(muderator, 'You will ' .. M('indefinite', item_thing.name) .. ' into being.')
+      		witness_text(muderator, M('indefinite', muderator) .. ' makes a(n) ' .. M('indefinite', item_thing.name) .. ' appears!')
+   	end,
+
+-- *****************************
              }
 -- Creating rooms
 add_functions{
@@ -205,17 +234,6 @@ add_functions
 	  do_to('put-in', player, get_thing(M('exit', portal)))
 	end
 }			 
-
-
-
-
-
-
-
-
-
-
-
 -- ****************************************************************************
 -- Cliff!
 add_atoms{cliff="portal"}
@@ -233,11 +251,14 @@ add_functions{
              }
 -- Inventory?
 -- ****************************************************************************
-add_atoms{inventory='verb'}
+add_atoms{[{'inventory', 'get'}]='verb', item='noun'}
 add_functions
 {
 	['player inventory'] = function(player)
 		open_inventory(player.name)
+	end,
+	['player get item'] = function(player, item)
+		add_to_inventory(player.name, item)
 	end
 }
 
