@@ -4,9 +4,8 @@
 function add_player(id, data)
    data.name = id
    data.id = id
-   -- Inventory?
-   data.itemsCount = 2;
-   data.inventory = {'guitar pick', 'lightsaber'}
+   -- Inventory
+   data.inventory = {'guitar pick', 'lightsaber', '$ 0'}
    if add_thing(id, data) then
       DEBUG('Added player \'' .. id .. '\'')
       return data
@@ -19,7 +18,7 @@ end
 
 
 -- <Inventory Item Hierarchy>
---
+--    (IMPLEMENTED)         (NOT IMPLEMENTED)
 --   item (carryable)    object (not-carryable)
 --     ^                    ^
 --	    thing
@@ -42,6 +41,13 @@ end
 function add_to_inventory(id, item)
 	local player = get_player(id)
 	local original_container = M('container', player)	
+
+	-- Check if dealing with a currency item
+	--DEBUG('<><><><><> item.id = <' .. item.id .. '>')
+	--DEBUG('<><><><><> item.name = <' .. item.name .. '>')
+	if item.name == 'coin' then
+		player_text(player, 'You\'re handling money, aren\'t you?')
+	end
 
 	-- Put the item in the player's inventory-table
 	table.insert(player.inventory, item.id)

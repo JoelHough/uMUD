@@ -147,7 +147,7 @@ force_do('whisk God to the Void')
 
 -- Creating things
 -- <Adding carryables> ~ "item" --> put in the list below!
-add_atoms{create='verb', item='thing', [{'rock', 'coin'}] = 'item'}
+add_atoms{create='verb', item='thing', [{'rock', 'coin', 'key'}] = 'item'}
 add_functions{
    ['subject-bind-search create'] = 'none',
    ['muderator create thing'] = function(muderator, thing_group)
@@ -267,8 +267,8 @@ add_functions
 	['player inventory'] = function(player)
 		open_inventory(player.name)
 	end,
-	['subject-bind-limit get'] = 'single',
-	['object-bind-limit get'] = 'single',
+	--['subject-bind-limit get'] = 'single',
+	--['object-bind-limit get'] = 'single',
 	['player get item'] = function(player, item)
 		-- Remove item from original container
 		remove_content(item)
