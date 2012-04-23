@@ -380,6 +380,7 @@ int main(int argc, char *argv[])
 					for(int j = 0; j <= maxUserFD; j++)
 					{
 						/* send to everyone! */
+						//I would rather send specific socket to associated nick
 						if(FD_ISSET(j, &master))
 						{
 						   /* except the trackingFD and ourselves */
