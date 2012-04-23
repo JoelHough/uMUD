@@ -165,7 +165,6 @@ add_functions{
       		player_text(muderator, 'You will ' .. M('indefinite', item_thing.name) .. ' into being.')
       		witness_text(muderator, M('indefinite', muderator) .. ' makes a(n) ' .. M('indefinite', item_thing.name) .. ' appears!')
    	end,
-
 -- *****************************
              }
 -- Creating rooms

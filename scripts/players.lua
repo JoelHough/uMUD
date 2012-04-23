@@ -30,11 +30,16 @@ end
 -- NOTE:
 -- If adding, say, money --> Will need to check current balance and add to!....
 function add_to_inventory(id, item)
-	data.itemsCount = data.itemsCount + 1
+	local player = get_player(id)
+	
+	table.insert(player.inventory, item.id)
+
+
+	--player.itemsCount = player.itemsCount + 1
 	local player = get_thing(id)
 	-- IF item is 'carryable'
 	-- if.... do....
-	player.inventory[data.itemsCount] = item
+	--player.inventory[data.itemsCount] = item
 	player_text(player, 'You pick up a ' .. item.name)
 end
 
