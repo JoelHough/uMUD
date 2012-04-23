@@ -60,7 +60,7 @@ function drop_from_inventory(id, item)
 
 	-- Put item into the surrounding area <Does Not work!>....
 	DEBUG('area_around ~ <' .. area_around.name .. '>')
-	table.insert(area_around, item.id)
+	table.insert(area_around.contents, item)
 
 	-- <Message Action!>
 	player_text(player, 'You drop ' .. item.name .. ' from your inventory.')
