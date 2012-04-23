@@ -133,7 +133,7 @@ local command = Cg(adverbs, 'adverbs1') * Cg(verb, 'verb') * Cg(adverbs, 'adverb
    + Cg(adverbs, 'adverbs1') * Cg(preposition, 'preposition') * Cg(noun_phrase, 'object') * Cg(adverbs, 'adverbs2') * Cg(verb, 'verb') * Cg(adverbs, 'adverbs3') * Cg(noun_phrase, 'subject') * Cg(adverbs, 'adverbs4')
 local sentence = Ct(Cg(Ct(Cmt(Ct(command), combine_adverbs) * Cmt(Ct(Cg(conjunction, 'conjunction') * command), combine_adverbs)^0), 'commands'))
 
-local speakat = S"@" * Cg(noun_phrase, 'sayto') * P' ' * Cg(P(1)^0, 'text') * line_end
+local speakat = S"'" * Cg((P(' ')^0 * (P(1)-S('@ '))^1)^0, 'text') * P(' ')^0 * P'@' * P(' ')^0 * Cg(noun_phrase, 'sayto') * line_end
 local speak = S"'" * Cg(P(1)^0, 'say') * line_end
 local emote = S"/" * Cg(P(1)^0, 'emote') * line_end
 local eval = S"`" * Cg(P(1)^0, 'eval') * line_end

@@ -310,6 +310,7 @@ void process_room_umud_command(string command, string nick)
     // Initiate a game of umud in a private room
     say_to_room("Do something with sockets one day.");
     add_player(nick);
+    say_to_room(nick + ": Check for a PM");
   } else if (boost::starts_with(command, "/me ")) {
     // Dance for the people!
     me_say_to_room(command.substr(4));
