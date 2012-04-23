@@ -97,8 +97,6 @@ add_functions{
       return title .. "\n" .. hr .. "\n" .. detail .. content_list
    end,
    ['put-in thing container'] = move_content,
-   -- <><><>
-   --['put-in item container'] = move_content,
    ['player look'] = function(player)
       local container = M('container', player)
       if not container then
@@ -263,22 +261,29 @@ add_functions{
              }
 -- Inventory?
 -- ****************************************************************************
-add_atoms{[{'inventory', 'get'}]='verb', item='noun'}
+add_atoms{[{'inventory', 'get', 'drop'}]='verb', item='noun'}
 add_functions
 {
 	['player inventory'] = function(player)
 		open_inventory(player.name)
 	end,
+	['subject-bind-limit get'] = 'single',
+	['object-bind-limit get'] = 'single',
 	['player get item'] = function(player, item)
 		-- Remove item from original container
 		remove_content(item)
 		add_to_inventory(player.name, item)
+	end,
+	['subject-bind-search drop'] = 'global',
+	['player drop item'] = function(player, item)
+		-- Remove item from inventory
+		DEBUG('Dropped Item? <' .. item.name .. '>')
+		--DEBUG('Dropped Item\'s Container <' .. M('container', item) .. '>')
+		remove_content(item)
+		drop_from_inventory(player.name, item)
 	end
 }
-
 -- ****************************************************************************
-
-
 -- Talking and other pleasantries
 add_atoms{[{'say', 'dance', 'apologize', 'bark', 'bmoc', 'combhair', 'slap', 'flex', 'nod', 'relax', 'bow', 'cheer', 'grin', 'chuckle'}]='verb', to='preposition'}
 
