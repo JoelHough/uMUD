@@ -5,6 +5,7 @@ function add_player(id, data)
    data.name = id
    data.id = id
    -- Inventory?
+   data.itemsCount = 2;
    data.inventory = {'guitar pick', 'lightsaber'}
    if add_thing(id, data) then
       DEBUG('Added player \'' .. id .. '\'')
@@ -25,3 +26,20 @@ function open_inventory(id)
 		player_text(player, '> ' .. i .. '  ' .. k)
 	end
 end
+
+-- NOTE:
+-- If adding, say, money --> Will need to check current balance and add to!....
+function add_to_inventory(id, item)
+	data.itemsCount = data.itemsCount + 1
+	local player = get_thing(id)
+	-- IF item is 'carryable'
+	-- if.... do....
+	player.inventory[data.itemsCount] = item
+	player_text(player, 'You pick up a ' .. item.name)
+end
+
+
+
+
+
+	
