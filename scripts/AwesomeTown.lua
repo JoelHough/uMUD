@@ -1,7 +1,6 @@
 Containers =
 {
-	Room = "A place for my stuff. Four walls and a ceiling.",
-		
+			
 	Town = 
 	   {
 	   "A small village with a dozen or so inhabitants. There are a few places to visit, but there isn't much to look at.",
@@ -59,7 +58,7 @@ Things =
 	   Ringmail= "Armor made from many thousands of iron rings. Protects from slicing blows, but is weak against piercing attacks",
 	   },
 	Wildlife= 
-	 {
+	   {
 	   "The Fauna of the world, some are cute and fuzzy, some not so much.",
 	   Rabbit= "A cute fuzzy bunny, with big nasty pointy teeth",
 	   Squirrel= "Small woodland creature. Rodent class.",
@@ -69,18 +68,56 @@ Things =
 	   Cat= "A pretentious, arrogant creature.",
 	   Boar= "Sharp tusks, thick hide, and a bad attitude. Stay clear of it unless you want some extra holes in your stomach.",
 	
-	}
+	   }
+}
+
+Words = 
+{
+   Verbs = 
+      {
+      'say', 'dance', 'apologize', 'bark', 'bmoc', 'combhair', 'slap', 'flex', 'nod', 'relax', 'bow', 'cheer', 'grin', 'chuckle', 'coerce'
+      },
+   Adjectives = 
+      {	 
+      'shiny', 'purple', 'sharp', 'long', 'short', 'blunt', 'dull', 'brilliant', 'heavy'
+      },
+   Prepositions = 
+      {
+      'to', 'from', 'with', 'in'
+      },
+   Portals = 
+      {
+       
+      },
+   Functions = 
+      {
+
+      }
+}
+
+Associations = 
+{
+   
 }
 
 
 
-function test_world()
-   print'Testing world building'
-   for k, v in ipairs(Things) do
-      print'Test'
-      DEBUG(Things.k[1] .. " " .. v)
+-------UNIT TESTS---------
 
-   end
+function test_world()
+   print("Testing world building")
+   
+   print("CONTAINERS: ")
+   print(printTable(Containers))
+   
+   print("THINGS: ")
+   print(printTable(Things))
+
+   
+
 end
 
+
+
+-------RUN TESTS---------
 test_world()
