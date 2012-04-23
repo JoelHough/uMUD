@@ -31,8 +31,10 @@
 
 #include <arpa/inet.h>
 #include <boost/regex.hpp>
+#include <boost/algorithm/string.hpp>
 
 #define PORT "6667" // the port client will be connecting to
+#define IRCHOST "irc.freenode.net"
 
 #define MAXDATASIZE 500 // max number of bytes we can get at once
 
@@ -108,7 +110,35 @@ int main(int argc, char *argv[])
     freeaddrinfo(servinfo); // all done with this structure
 
     /*--Begin add by James Murdock--*/
-    bool run = true;
+    //const sockaddr *umudSrvrHost = '166.70.129.150';
+    //int umudSrvrPort(4000);
+
+    sockaddr_in uMUDsrv;
+    uMUDsrv.sin_addr.s_addr = inet_addr("166.70.129.150");
+    uMUDsrv.sin_family = AF_INET;
+    uMUDsrv.sin_port = htons(4000);
+    char FDbuf[MAXDATASIZE];
+    //max user file descriptor number
+	int maxUserFD;
+	//tracking file descriptor
+	int trackingFD;
+	//last file descriptor
+	int lastFD;
+	//FD buffer bytes
+	int nbytes;
+	//master file descriptor list
+	fd_set master;
+	//temp file descriptor list for select()
+	fd_set read_fds;
+	//zeroize master and temp file descriptor lists
+	FD_ZERO(&master);
+	FD_ZERO(&read_fds);
+	//add the tracker to the master set
+	FD_SET(sockfd, &master);
+	//keep track of the biggest file descriptor
+	maxUserFD = sockfd;
+
+	bool run = true;
     while(run)
     {
 //    	cout << "---RUN Loop0---" << endl;
@@ -155,12 +185,21 @@ int main(int argc, char *argv[])
 						perror("send");
 						exit(1);
 					}
+
+					if (send(sockfd, "PRIVMSG nickserv :IDENTIFY l3tm3!n101\n", 38, 0) == -1)
+					{
+						perror("send");
+						exit(1);
+					}
 			}
 
 			if(bufstr.find(":End of /MOTD command") != string::npos)
 			{
 //				cout << "---END OF MOTD FOUND---" << endl;
 				if (send(sockfd, "JOIN #TeamException\n", 20, 0) == -1)
+					perror("send");
+
+				if (send(sockfd, "PRIVMSG ChanServ :OP #TeamException uMUDbot\n", 44, 0) == -1)
 					perror("send");
 			}
 
@@ -190,7 +229,8 @@ int main(int argc, char *argv[])
 					endpos = msg.find("umud:");
 					cout << "endpos = " << endpos << endl;
 					string cmd = msg.substr(endpos+5);
-					cout << "cmd = " << cmd << endl;
+					endpos = cmd.find("\n");
+					cmd = cmd.substr(0, endpos);
 					if(cmd.find("hi") != string::npos || cmd.find("hello") != string::npos || cmd.find("sup") != string::npos)
 					{
 						cmdOpt = 1;
@@ -198,6 +238,10 @@ int main(int argc, char *argv[])
 					else if(cmd.find("play") != string::npos)
 					{
 						cmdOpt = 2;
+					}
+					else if(cmd.find("/me") != string::npos)
+					{
+						cmdOpt = 3;
 					}
 					else
 					{
@@ -223,6 +267,51 @@ int main(int argc, char *argv[])
 							if (send(sockfd, (void*)str.c_str(), str.length(), 0) == -1)
 								perror("send");
 							//do socket stuff here
+							//open a socket to umud.hyob.net 4000
+							//send the response from the server to nick as a PRIVMSG nick :<server response>
+							//each nick must identify to a select() socket
+
+							/* handle new connections */
+							/* Get a socket descriptor */
+							if((trackingFD = socket(AF_INET, SOCK_STREAM, 0)) < 0)
+							{
+								perror("Server-socket() error");
+								/* Just exit */
+								exit (-1);
+							}
+//							else
+//							{
+//								printf("Server-socket() is OK...\n");
+//
+//								//FD_SET(trackingFD, &master); /* add to master set */
+//								if(trackingFD > maxUserFD)
+//								{ /* keep track of the maximum */
+//									maxUserFD = trackingFD;
+//								}
+//							}
+							if ((lastFD = connect(trackingFD, (sockaddr *)&uMUDsrv, sizeof(uMUDsrv))) == -1) {
+								close(trackingFD);
+								perror("client: connect");
+								continue;
+							}
+							else
+							{
+								FD_SET(lastFD, &master);
+								if(lastFD > maxUserFD)
+								{ /* keep track of the maximum */
+									maxUserFD = lastFD;
+								}
+							}
+							break;
+						case 3:
+							str = "ME #TeamException :";
+							str += cmd;
+							str += " ";
+							str += nick;
+							str += "\n";
+
+							if (send(sockfd, (void*)str.c_str(), str.length(), 0) == -1)
+								perror("send");
 							break;
 						default:
 							str = "PRIVMSG #TeamException :";
@@ -254,10 +343,57 @@ int main(int argc, char *argv[])
 //			int lineEndPos = bufstr.find("\n");
 //			bufstr = bufstr.substr(lineEndPos+1);
 //			cout << "---RESETING bufstr---" << endl;
-			bufstr = "";
+			bufstr.clear();
 		}
 		//bufstr = "";
 //		cout << "---ENDING Nested While---" << endl;
+
+		/*check for data from the uMUD server and pass to the respected user*/
+		//copy master as the last file descriptor
+		read_fds = master;
+		if(select(maxUserFD+1, &read_fds, NULL, NULL, NULL) == -1)
+		{
+			perror("Server-select() error!");
+			exit(1);
+		}
+		for(int i = 0; i <= maxUserFD; i++)
+		{
+			if(FD_ISSET(i, &read_fds))
+			{
+				/* handle data from the server */
+				if((nbytes = recv(i, FDbuf, sizeof(FDbuf), 0)) <= 0)
+				{
+					/* got error or connection closed by server */
+					if(nbytes == 0)
+						/* connection closed */
+						printf("%s: socket %d hung up\n", argv[0], i);
+					else
+						perror("recv() error!");
+					/* close it... */
+					close(i);
+					/* remove from master set */
+					FD_CLR(i, &master);
+				}
+				else
+				{
+					/* we got some data from the server*/
+					for(int j = 0; j <= maxUserFD; j++)
+					{
+						/* send to everyone! */
+						//I would rather send specific socket to associated nick
+						if(FD_ISSET(j, &master))
+						{
+						   /* except the trackingFD and ourselves */
+						   if(j != trackingFD && j != i)
+						   {
+							  if(send(j, FDbuf, nbytes, 0) == -1)
+								 perror("send() error!");
+						   }
+						}
+					}
+				}
+			}
+		}
     }
     /*--End add by James Murdock--*/
 //    cout << "---ENDING Program---" << endl;
