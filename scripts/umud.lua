@@ -179,7 +179,7 @@ add_functions{
       return true
    end
              }
-
+-- Directional Portals
 -- ***************************************************************************
 add_atoms { [{'north', 'east', 'south', 'west'}]="portal" }
 add_functions
@@ -231,6 +231,17 @@ add_functions{
       return true
    end
              }
+-- Inventory?
+-- ****************************************************************************
+add_atoms{inventory='verb'}
+add_functions
+{
+	['player inventory'] = function(player)
+		open_inventory(player.name)
+	end
+}
+
+-- ****************************************************************************
 
 
 -- Talking and other pleasantries
