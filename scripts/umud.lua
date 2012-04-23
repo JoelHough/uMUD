@@ -189,7 +189,7 @@ add_functions{
       local p_name = M('indefinite', player)
       witness_text(player, p_name .. ' takes a running leap off ' .. M('indefinite', portal) .. '!')
       do_to('put-in', player, get_thing(M('exit', portal)))
-      witness_text(player, p_name .. ' comes tumbling down ' .. M('indefinite', portal) .. '!  They land hard, and after a momentm stand and dust themself off,')
+      witness_text(player, p_name .. ' comes tumbling down ' .. M('indefinite', portal) .. '!  They land hard, and after a moment, stand and dust themself off,')
       F{player, 'look'}(player)
       return true
    end
