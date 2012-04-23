@@ -60,7 +60,7 @@ add_functions{
          player_text(muderator, "*CRACK*\nThe energy flees, leaving you drained.  Maybe the moon is in the wrong phase?")
          witness_text(muderator, "You here a tremendous *CRACK* as the blow glow rushes from " .. M('indefinite', muderator) .. '.  You get the feeling that whatever was happening did not go well.')
       else
-         dofile'hotpatch.lua'
+         dofile'../scripts/hotpatch.lua'
          player_text(muderator, "*FWOOSH*\nThe energy flies from you, altering the very fabric of time and space!")
          witness_text(muderator, "You here a tremendous *FWOOSH* as the blow glow rushes from " .. M('indefinite', muderator) .. ', washing over you.  You get the feeling that whatever was happening, the world will never be the same.')
       end
