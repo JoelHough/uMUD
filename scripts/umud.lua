@@ -158,6 +158,45 @@ add_functions{
    end
              }
 
+-- ***************************************************************************
+add_atoms { [{'north', 'east', 'south', 'west'}] = 'noun' }
+add_functions
+{
+	['muderator create-to portal north'] = function(muderator)
+	  -- Create a room to be "the northern room"
+	  local room = add_room()
+	  -- Create portal with name "north", link to room arg
+	  local roomID = create_thing('portal', {types={'portal', 'north'}, exit=room.id})
+	  -- Put the portal in the room the Muderator is in
+	  do_to('put-in', get_thing(roomID), M('container', muderator))
+	  -- DEBUG
+	  player_text(player, 'Northern Path -- ' .. M('indefinite', portal))
+	  end,
+	['player go north'] = function(player)
+ 	  local container = M('container', player)
+	  local portal = M('portal', container)
+	  if portal.name=='north portal' then
+	     do_to('put-in', get_thing(portal.id), M('container', player))
+	     player_text(player, 'You travel north...')
+	     witness_text(player, M('indefinite', player) .. ' travels north.')
+	  else 
+	     player_text(player, 'There is no path North.')
+	  end
+	end
+}			 
+
+
+
+
+
+
+
+
+
+
+
+-- ****************************************************************************
+
 -- Talking and other pleasantries
 add_atoms{[{'say', 'dance', 'apologize', 'bark', 'bmoc', 'combhair', 'slap', 'flex', 'nod', 'relax', 'bow', 'cheer', 'grin', 'chuckle'}]='verb', to='preposition'}
 
@@ -176,7 +215,6 @@ add_functions
       ['player dance'] = function(player)
         player_text(player, 'You burst into dance.')
         witness_text(player, M('indefinite', player)..' bursts into dance.')
-        add_atoms{dance='verb'}
       	end,
       ['player dance player'] = function(p1, p2)
         witness_text(p1, M('indefinite', p1) .. ' dances with ' .. M('indefinite', p2) .. ' wildly.')
@@ -185,17 +223,14 @@ add_functions
       ['player relax'] = function(player)
         witness_text(player, M('indefinite', player)..' sits down, lounging with complete abandon.');
 	player_text(player, 'You sit down and lounge with complete abandon.');
-	add_atoms{ relax = 'verb' };
       	end,
       ['player bmoc'] = function(player)
         witness_text(player, M('indefinite', player)..' is the Big Man On Campus!');
 	player_text(player, 'You\'re the Big Man On Campus!');
-	add_atoms{ bmoc = 'verb' };
       	end,
       ['player combhair'] = function(player)
         witness_text(player, M('indefinite', player)..' combs his/her own		hair.');
 	player_text(player, 'You comb your own hair.');
-	add_atoms{ combhair = 'verb' };
       	end,
       ['player combhair player'] = function(p1, p2)
         witness_text(p1, M('indefinite', p1) .. ' combs ' .. 
@@ -205,12 +240,10 @@ add_functions
       ['player flex'] = function(player)
         witness_text(player, M('indefinite', player)..' flexes his muscles		. So strong!');
 	player_text(player, 'You flex your muscles. So strong!');
-	add_atoms{ flex = 'verb' };
       	end,
       ['player nod'] = function(p)
         witness_text(p, M('indefinite', p) ..' nods.');
 	player_text(p, 'You nod.');
-	add_atoms { nod = 'verb' };
       	end,
       ['player nod player'] = function(p1, p2)
         witness_text(p1, M('indefinite', player) .. ' nods at you.');
@@ -239,7 +272,6 @@ add_functions
       ['player apologize'] = function(p)
         witness_text(p, M('indefinite', p) ..' apologizes for being born.'		);
 	player_text(p, 'You apologize for being born.');
-	add_atoms { apologize = 'verb' };
       	end,
       ['player apologize player'] = function(p1, p2)
         witness_text(p1, M('indefinite', p1) .. ' apologies to ' .. 
@@ -249,7 +281,6 @@ add_functions
       ['player cheer'] = function(p)
         witness_text(p, M('indefinite', p) .. ' cheers - Hurrah!');
 	player_text(p, 'You cheer. Hurrah!');
-	add_atoms { cheer = 'verb' };
       	end,
       ['player cheer player'] = function(p1, p2)
         witness_text(p1, M('indefinite', p1) .. ' cheers at you. Wooo!');
@@ -258,7 +289,6 @@ add_functions
       ['player grin'] = function(p)
         witness_text(p, M('indefinite', p) .. ' grins to himself.');
 	player_text(p, 'You grin to yourself. Tee hee...');
-	add_atoms { grin = 'verb' };
       	end,
       ['player grin player'] = function(p1, p2)
         witness_text(p1, M('indefinite', p1) .. ' grins at you. He knows...');
@@ -267,7 +297,6 @@ add_functions
       ['player chuckle'] = function(p)
         witness_text(p, 'Chuckles good-naturedly.');
 	player_text(p, 'You chuckle good-naturedly.');
-	add_atoms { chuckle = 'verb' };
       	end,
       ['player chuckle player'] = function(p1, p2)
         witness_text(p1, M('indefinite', p1) .. ' chuckles at you, full of mirth!');
@@ -276,6 +305,5 @@ add_functions
       ['player slap'] = function(player)
         witness_text(player, M('indefinite', player)..' slaps himself with a trout. Ouch!');
 	player_text(player, 'You slap yourself with a trout. Ouch!');
-	add_atoms{ slap = 'verb' };
       end
 }
