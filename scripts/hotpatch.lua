@@ -1,1 +1,1 @@
-dofile'umud.lua'
+dofile'../scripts/umud.lua'
