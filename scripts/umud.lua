@@ -28,7 +28,7 @@ require'things'
 add_atoms{eval='verb', hotpatch='verb'}
 add_functions{
    ['connect player'] = function(player)
-      force_do('whisk ' .. player.id .. ' to the Void')
+      force_do('whisk ' .. player.id .. ' to The Void')
    end,
    ['everything'] = things,
    ['detail thing'] = function(thing) return thing.long_desc or 'It is very non-descript.' end,
