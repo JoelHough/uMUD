@@ -36,17 +36,20 @@
 
 #include <arpa/inet.h>
 #include <boost/regex.hpp>
+#include <boost/algorithm/string/predicate.hpp>
 #include <boost/algorithm/string.hpp>
 
 using namespace std;
-using boost::iequals;
 
 #define PORT "6667" // the port client will be connecting to
 #define IRCHOST "irc.freenode.net"
 
 #define MAXDATASIZE 500 // max number of bytes we can get at once
 
+const string room = "#TeamException";
 boost::regex irc_regex("^(:(?<prefix>\\S+) )?(?<command>\\S+)( (?!:)(?<params>.+?))?( :(?<trail>.+))?$");
+boost::regex nick_regex("^(?<nick>\\S+)!(?<host>\\S+)$");
+boost::regex umud_command_regex("^\\s*umud:\\s*(.*)$");
 
 const int NO_SOCKET = -1;
 
@@ -153,17 +156,6 @@ bool read_into_buffer(int &from_socket, string &to_buf)
   return true;
 }
 
-void close_comms()
-{
-  // Disconnect players
-  // TODO:
-
-  // Disconnect irc
-  if (ircSocket != NO_SOCKET) {
-    close(ircSocket);
-  }
-}
-
 bool connect_to_irc(const string &host)
 {
   struct addrinfo hints, *servinfo, *p;
@@ -214,12 +206,60 @@ bool connect_to_irc(const string &host)
 
 void irc_send_line(string line)
 {
+  cout << ">" << line << endl;
   ircOutBuf += line + "\n";
+}
+
+void irc_command(string command, string param, string trail)
+{
+  irc_send_line(command + " " + param + " :" + trail);
+}
+
+void say_to(string nick, string text)
+{
+  irc_command("PRIVMSG", nick, text);
+}
+
+void say_to_room(string text)
+{
+  say_to(room, text);
+}
+
+void me_say_to(string nick, string text)
+{
+  say_to(nick, "\001ACTION " + text);
+}
+
+void me_say_to_room(string text)
+{
+  me_say_to(room, text);
+}
+
+void close_comms()
+{
+  // Disconnect players
+  // TODO:
+
+  // Disconnect irc
+  if (ircSocket != NO_SOCKET) {
+    irc_send_line("QUIT :Peace out, bitches");
+    write_from_buffer(ircSocket, ircOutBuf);
+    close(ircSocket);
+  }
+}
+
+void process_room_umud_command(string command)
+{
+  if (boost::iequals(command, "play")) {
+    say_to_room("Do something with sockets one day.");
+  } else if (boost::starts_with(command, "/me ")) {
+    me_say_to_room(command.substr(4));
+  }
 }
 
 void irc_process_line(string line)
 {
-  string prefix, command, params, trail;
+  string prefix, command, params, trail, nick, umud_command;
   boost::cmatch result;
   if (boost::regex_match(line.c_str(), result, irc_regex)) {
     if (result[0].matched) {
@@ -238,12 +278,24 @@ void irc_process_line(string line)
     irc_send_line("USER uMUDbot * 8 :uMUD BOT");
     irc_send_line("PRIVMSG nickserv :IDENTIFY l3tm3!n101");
   } else if(command == "376") { // :End of /MOTD command.
-    irc_send_line("JOIN #TeamException");
-    irc_send_line("PRIVMSG ChanServ :OP #TeamException uMUDbot");
+    irc_send_line("JOIN " + room);
+    irc_send_line("PRIVMSG ChanServ :OP " + room + " uMUDbot");
   } else if(command == "ERROR" && trail == "Closing Link") {
     isRunning = false;
   } else if(command == "PING") {
     irc_send_line("PONG :" + trail);
+  } else if(command == "PRIVMSG") {
+    if (boost::regex_match(prefix.c_str(), result, nick_regex)) {
+      nick = string(result[1].first, result[1].second);
+      if (boost::iequals(params, room)){
+        if (boost::regex_match(trail.c_str(), result, umud_command_regex)) {
+          umud_command = string(result[1].first, result[1].second);
+          process_room_umud_command(umud_command);
+        }
+      }
+    } else {
+      cout << "Can't find a nick on this msg" << endl;
+    }
   } else {
     cout << "Don't know what to do with that line" << endl;
   }
