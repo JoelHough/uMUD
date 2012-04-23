@@ -83,7 +83,7 @@ local sentence_end = S'.;'
 local line_end = P(-1)
 local sep = S' ,'
 
-local word = (R'AZ' + R'az' + R'01')^1 / string.lower
+local word = (R'AZ' + R'az' + R'09')^1 / string.lower
 
 local function word_that(f)
    return Cmt(word, f)
