@@ -1,3 +1,4 @@
 *.o
 server
+bot
 umud.db
