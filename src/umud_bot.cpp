@@ -28,26 +28,60 @@
 #include <ctype.h>
 #include <sys/time.h>
 #include <fcntl.h>
+#include <list>
+#include <string>
+#include <vector>
+#include <cctype>
+#include <signal.h>
 
 #include <arpa/inet.h>
 #include <boost/regex.hpp>
+#include <boost/algorithm/string/predicate.hpp>
 #include <boost/algorithm/string.hpp>
+
+using namespace std;
 
 #define PORT "6667" // the port client will be connecting to
 #define IRCHOST "irc.freenode.net"
 
+const string UMUD_PORT = "4000";
+const string UMUD_HOST = "umud.hyob.net";
+
 #define MAXDATASIZE 500 // max number of bytes we can get at once
 
-int sock;            /* The socket file descriptor for our "listening"
-                   	socket */
-int connectlist[5];  /* Array of connected sockets so we know who
-	 		we are talking to */
-fd_set socks;        /* Socket file descriptors we want to wake
-			up for, using select() */
-int highsock;	     /* Highest #'d file descriptor, needed for select() */
+const string room = "#TeamException";
+boost::regex irc_regex("^(:(?<prefix>\\S+) )?(?<command>\\S+)( (?!:)(?<params>.+?))?( :(?<trail>.+))?$");
+boost::regex nick_regex("^(?<nick>\\S+)!(?<host>\\S+)$");
+boost::regex umud_command_regex("^\\s*umud:\\s*(.*)$");
 
+const int NO_SOCKET = -1;
 
-using namespace std;
+bool isRunning = true; // Keep looping?
+bool isQuitting = false; // Sent a quit?
+
+int ircSocket = NO_SOCKET;
+string ircOutBuf;
+string ircInBuf;
+
+fd_set in_set;
+fd_set out_set;
+
+struct IrcPlayer {
+  int socket;
+
+  // These aren't neccessarily the same!  irc is more tolerant than umud
+  string name;
+  string nick;
+
+  string out_buf;
+  string in_buf;
+};
+
+// player list type
+typedef list <IrcPlayer*> PlayerList;
+typedef PlayerList::iterator PlayerListIterator;
+
+PlayerList playerList;
 
 // get sockaddr, IPv4 or IPv6:
 void *get_in_addr(struct sockaddr *sa)
@@ -59,478 +93,431 @@ void *get_in_addr(struct sockaddr *sa)
     return &(((struct sockaddr_in6*)sa)->sin6_addr);
 }
 
-int main(int argc, char *argv[])
+void strip_control_chars(string &str)
 {
-    int sockfd, numbytes;
-    char buf[MAXDATASIZE];
-    struct addrinfo hints, *servinfo, *p;
-    int rv;
-    char s[INET6_ADDRSTRLEN];
-
-    if (argc != 2) {
-        fprintf(stderr,"usage: client hostname\n");
-        exit(1);
-    }
-
-    memset(&hints, 0, sizeof hints);
-    hints.ai_family = AF_UNSPEC;
-    hints.ai_socktype = SOCK_STREAM;
-
-    if ((rv = getaddrinfo(argv[1], PORT, &hints, &servinfo)) != 0) {
-        fprintf(stderr, "getaddrinfo: %s\n", gai_strerror(rv));
-        return 1;
-    }
-
-    // loop through all the results and connect to the first we can
-    for(p = servinfo; p != NULL; p = p->ai_next) {
-        if ((sockfd = socket(p->ai_family, p->ai_socktype,
-                p->ai_protocol)) == -1) {
-            perror("client: socket");
-            continue;
-        }
-
-        if (connect(sockfd, p->ai_addr, p->ai_addrlen) == -1) {
-            close(sockfd);
-            perror("client: connect");
-            continue;
-        }
-
-        break;
-    }
-
-    if (p == NULL) {
-        fprintf(stderr, "client: failed to connect\n");
-        return 2;
-    }
-
-    inet_ntop(p->ai_family, get_in_addr((struct sockaddr *)p->ai_addr),
-            s, sizeof s);
-    printf("client: connecting to %s\n", s);
-
-    freeaddrinfo(servinfo); // all done with this structure
-
-    /*--Begin add by James Murdock--*/
-    //const sockaddr *umudSrvrHost = '166.70.129.150';
-    //int umudSrvrPort(4000);
-
-    sockaddr_in uMUDsrv;
-    uMUDsrv.sin_addr.s_addr = inet_addr("166.70.129.150");
-    uMUDsrv.sin_family = AF_INET;
-    uMUDsrv.sin_port = htons(4000);
-    char FDbuf[MAXDATASIZE];
-    //max user file descriptor number
-	int maxUserFD;
-	//tracking file descriptor
-	int trackingFD;
-	//last file descriptor
-	int lastFD;
-	//FD buffer bytes
-	int nbytes;
-	//master file descriptor list
-	fd_set master;
-	//temp file descriptor list for select()
-	fd_set read_fds;
-	//zeroize master and temp file descriptor lists
-	FD_ZERO(&master);
-	FD_ZERO(&read_fds);
-	//add the tracker to the master set
-	FD_SET(sockfd, &master);
-	//keep track of the biggest file descriptor
-	maxUserFD = sockfd;
-
-	bool run = true;
-    while(run)
-    {
-//    	cout << "---RUN Loop0---" << endl;
-//    	cout << "---RUN Loop1---" << endl;
-//    	cout << "---RUN Loop2---" << endl;
-    	if ((numbytes = recv(sockfd, buf, MAXDATASIZE-1, 0)) == -1)
-    	{
-//    		cout << "---ERROR RECV---" << endl;
-			perror("recv");
-			exit(1);
-		}
-//    	cout << "---PRIOR PRINT---" << endl;
-    	printf("client: received '%s'\n",buf);
-    	string bufstr(buf);
-    	buf[numbytes] = '\0';
-
-
-		while(bufstr.length() > 0)
-		{
-			string nick;
-			string srvrName;
-			string msg;
-			bool srvrSection=false;
-			boost::cmatch match;
-			boost::regex srvName(":[^\\s][a-zA-Z0-9-]*\\.[a-zA-Z0-9-]*\\.[a-zA-Z]{2,4}[^\\s]", boost::regex_constants::perl);
-			boost::regex msgData(":[a-zA-Z0-9-]*![~a-zA-Z0-9]*@[a-zA-Z0-9\\./-]*\\sPRIVMSG\\s#TeamException\\s:.*[^\r\n]", boost::regex_constants::perl);
-			//[:][a-zA-Z0-9-]*[!][~a-zA-Z0-9]*@[a-zA-Z0-9-.]*\\s[P][R][I][V][M][S][G]\\s[#][T][e][a][m][E][x][c][e][p][t][i][o][n]\\s[:].*[\r\n]
-			//[:][a-zA-Z0-9-]*[!][~a-zA-Z0-9]*@[a-zA-Z0-9-\\.]*\\sPRIVMSG\\s#TeamException\\s[:].*[^\r\n]
-			//:[a-zA-Z0-9-]*![~a-zA-Z0-9]*@[a-zA-Z0-9-\\.]*\\sPRIVMSG\\s#TeamException\\s:umud:
-			size_t endpos;
-
-			if(bufstr.find("NOTICE * :*** No Ident response") != string::npos)
-			{
-//					cout << "---SENDING NICK---" << endl;
-
-					if (send(sockfd, "NICK uMUDbot\n", 13, 0) == -1)
-					{
-						perror("send");
-						exit(1);
-					}
-//					cout << "---SENDING Ident---" << endl;
-					if (send(sockfd, "USER uMUDbot * 8 :uMUD BOT\n", 25, 0) == -1)
-					{
-						perror("send");
-						exit(1);
-					}
-
-					if (send(sockfd, "PRIVMSG nickserv :IDENTIFY l3tm3!n101\n", 38, 0) == -1)
-					{
-						perror("send");
-						exit(1);
-					}
-			}
-
-			if(bufstr.find(":End of /MOTD command") != string::npos)
-			{
-//				cout << "---END OF MOTD FOUND---" << endl;
-				if (send(sockfd, "JOIN #TeamException\n", 20, 0) == -1)
-					perror("send");
-
-				if (send(sockfd, "PRIVMSG ChanServ :OP #TeamException uMUDbot\n", 44, 0) == -1)
-					perror("send");
-			}
-
-			if(regex_search(bufstr.c_str(), match, srvName))
-			{
-//				cout << "---srvName FOUND---" << endl;
-				endpos = match.str().find(":");
-				srvName = match.str().substr(endpos+1);
-//				cout << "Debug srvName = " << srvName << endl;
-			}
-
-			if(regex_search(bufstr.c_str(), match, msgData))
-			{
-//				cout << "---msgData FOUND---" << endl;
-				endpos = match.str().find("!");
-				nick = match.str().substr(1,endpos-1);
-
-				string newMatch = match.str().substr(1);
-				endpos = newMatch.find(":");
-				msg = newMatch.substr(endpos+1);
-
-				if(msg.find("umud:") != string::npos)
-				{
-					int cmdOpt;
-					string str;
-
-					endpos = msg.find("umud:");
-					cout << "endpos = " << endpos << endl;
-					string cmd = msg.substr(endpos+5);
-					endpos = cmd.find("\n");
-					cmd = cmd.substr(0, endpos);
-					if(cmd.find("hi") != string::npos || cmd.find("hello") != string::npos || cmd.find("sup") != string::npos)
-					{
-						cmdOpt = 1;
-					}
-					else if(cmd.find("play") != string::npos)
-					{
-						cmdOpt = 2;
-					}
-					else if(cmd.find("/me") != string::npos)
-					{
-						cmdOpt = 3;
-					}
-					else
-					{
-						cmdOpt = 0;
-					}
-
-					cout << "cmdOpt = " << cmdOpt << endl;
-					switch(cmdOpt)
-					{
-						case 1:
-							str = "PRIVMSG #TeamException :";
-							str += cmd;
-							str += " ";
-							str += nick;
-							str += "\n";
-
-							if (send(sockfd, (void*)str.c_str(), str.length(), 0) == -1)
-								perror("send");
-							break;
-						case 2:
-							str = "PRIVMSG #TeamException :";
-							str += "Do something with sockets here one day!\n";
-							if (send(sockfd, (void*)str.c_str(), str.length(), 0) == -1)
-								perror("send");
-							//do socket stuff here
-							//open a socket to umud.hyob.net 4000
-							//send the response from the server to nick as a PRIVMSG nick :<server response>
-							//each nick must identify to a select() socket
-
-							/* handle new connections */
-							/* Get a socket descriptor */
-							if((trackingFD = socket(AF_INET, SOCK_STREAM, 0)) < 0)
-							{
-								perror("Server-socket() error");
-								/* Just exit */
-								exit (-1);
-							}
-//							else
-//							{
-//								printf("Server-socket() is OK...\n");
-//
-//								//FD_SET(trackingFD, &master); /* add to master set */
-//								if(trackingFD > maxUserFD)
-//								{ /* keep track of the maximum */
-//									maxUserFD = trackingFD;
-//								}
-//							}
-							if ((lastFD = connect(trackingFD, (sockaddr *)&uMUDsrv, sizeof(uMUDsrv))) == -1) {
-								close(trackingFD);
-								perror("client: connect");
-								continue;
-							}
-							else
-							{
-								FD_SET(lastFD, &master);
-								if(lastFD > maxUserFD)
-								{ /* keep track of the maximum */
-									maxUserFD = lastFD;
-								}
-							}
-							break;
-						case 3:
-							str = "ME #TeamException :";
-							str += cmd;
-							str += " ";
-							str += nick;
-							str += "\n";
-
-							if (send(sockfd, (void*)str.c_str(), str.length(), 0) == -1)
-								perror("send");
-							break;
-						default:
-							str = "PRIVMSG #TeamException :";
-							str += "I do not understand your command, try umud:play or umud:<cmd>\n";
-							if (send(sockfd, (void*)str.c_str(), str.length(), 0) == -1)
-								perror("send");
-					}
-					//look for a command to send the user to a uMUD session
-					cout << "---umud: FOUND---" << endl;
-				}
-			}
-
-			if(bufstr.find("PING") != string::npos)
-			{
-				cout << "---PING FOUND---" << endl;
-				string str = "PONG :";
-				str += srvrName;
-				str += "\n";
-
-				if (send(sockfd, (void*)str.c_str(), str.length(), 0) == -1)
-					perror("send");
-			}
-
-			if(bufstr.find("ERROR :Closing Link") != string::npos)
-			{
-				run = false;
-			}
-
-//			int lineEndPos = bufstr.find("\n");
-//			bufstr = bufstr.substr(lineEndPos+1);
-//			cout << "---RESETING bufstr---" << endl;
-			bufstr.clear();
-		}
-		//bufstr = "";
-//		cout << "---ENDING Nested While---" << endl;
-
-		/*check for data from the uMUD server and pass to the respected user*/
-		//copy master as the last file descriptor
-		read_fds = master;
-		if(select(maxUserFD+1, &read_fds, NULL, NULL, NULL) == -1)
-		{
-			perror("Server-select() error!");
-			exit(1);
-		}
-		for(int i = 0; i <= maxUserFD; i++)
-		{
-			if(FD_ISSET(i, &read_fds))
-			{
-				/* handle data from the server */
-				if((nbytes = recv(i, FDbuf, sizeof(FDbuf), 0)) <= 0)
-				{
-					/* got error or connection closed by server */
-					if(nbytes == 0)
-						/* connection closed */
-						printf("%s: socket %d hung up\n", argv[0], i);
-					else
-						perror("recv() error!");
-					/* close it... */
-					close(i);
-					/* remove from master set */
-					FD_CLR(i, &master);
-				}
-				else
-				{
-					/* we got some data from the server*/
-					for(int j = 0; j <= maxUserFD; j++)
-					{
-						/* send to everyone! */
-						//I would rather send specific socket to associated nick
-						if(FD_ISSET(j, &master))
-						{
-						   /* except the trackingFD and ourselves */
-						   if(j != trackingFD && j != i)
-						   {
-							  if(send(j, FDbuf, nbytes, 0) == -1)
-								 perror("send() error!");
-						   }
-						}
-					}
-				}
-			}
-		}
-    }
-    /*--End add by James Murdock--*/
-//    cout << "---ENDING Program---" << endl;
-    close(sockfd);
-
-    return 0;
+  str.erase(remove_if(str.begin(), str.end(), (int(*)(int))iscntrl), str.end());
 }
 
-//void setnonblocking(sock)
-//int sock;
-//{
-//	int opts;
-//
-//	opts = fcntl(sock,F_GETFL);
-//	if (opts < 0) {
-//		perror("fcntl(F_GETFL)");
-//		exit(EXIT_FAILURE);
-//	}
-//	opts = (opts | O_NONBLOCK);
-//	if (fcntl(sock,F_SETFL,opts) < 0) {
-//		perror("fcntl(F_SETFL)");
-//		exit(EXIT_FAILURE);
-//	}
-//	return;
-//}
-//
-//void build_select_list() {
-//	int listnum;	     /* Current item in connectlist for for loops */
-//
-//	/* First put together fd_set for select(), which will
-//	   consist of the sock veriable in case a new connection
-//	   is coming in, plus all the sockets we have already
-//	   accepted. */
-//
-//
-//	/* FD_ZERO() clears out the fd_set called socks, so that
-//		it doesn't contain any file descriptors. */
-//
-//	FD_ZERO(&socks);
-//
-//	/* FD_SET() adds the file descriptor "sock" to the fd_set,
-//		so that select() will return if a connection comes in
-//		on that socket (which means you have to do accept(), etc. */
-//
-//	FD_SET(sock,&socks);
-//
-//	/* Loops through all the possible connections and adds
-//		those sockets to the fd_set */
-//
-//	for (listnum = 0; listnum < 5; listnum++) {
-//		if (connectlist[listnum] != 0) {
-//			FD_SET(connectlist[listnum],&socks);
-//			if (connectlist[listnum] > highsock)
-//				highsock = connectlist[listnum];
-//		}
-//	}
-//}
-//
-//void handle_new_connection() {
-//	int listnum;	     /* Current item in connectlist for for loops */
-//	int connection; /* Socket file descriptor for incoming connections */
-//
-//	/* We have a new connection coming in!  We'll
-//	try to find a spot for it in connectlist. */
-//	connection = accept(sock, NULL, NULL);
-//	if (connection < 0) {
-//		perror("accept");
-//		exit(EXIT_FAILURE);
-//	}
-//	setnonblocking(connection);
-//	for (listnum = 0; (listnum < 5) && (connection != -1); listnum ++)
-//		if (connectlist[listnum] == 0) {
-//			printf("\nConnection accepted:   FD=%d; Slot=%d\n",
-//				connection,listnum);
-//			connectlist[listnum] = connection;
-//			connection = -1;
-//		}
-//	if (connection != -1) {
-//		/* No room left in the queue! */
-//		printf("\nNo room left for new client.\n");
-//		sock_puts(connection,"Sorry, this server is too busy.  "
-//					Try again later!\r\n");
-//		close(connection);
-//	}
-//}
-//
-//void deal_with_data(
-//	int listnum			/* Current item in connectlist for for loops */
-//	) {
-//	char buffer[80];     /* Buffer for socket reads */
-//	char *cur_char;      /* Used in processing buffer */
-//
-//	if (sock_gets(connectlist[listnum],buffer,80) < 0) {
-//		/* Connection closed, close this end
-//		   and free up entry in connectlist */
-//		printf("\nConnection lost: FD=%d;  Slot=%d\n",
-//			connectlist[listnum],listnum);
-//		close(connectlist[listnum]);
-//		connectlist[listnum] = 0;
-//	} else {
-//		/* We got some data, so upper case it
-//		   and send it back. */
-//		printf("\nReceived: %s; ",buffer);
-//		cur_char = buffer;
-//		while (cur_char[0] != 0) {
-//			cur_char[0] = toupper(cur_char[0]);
-//			cur_char++;
-//		}
-//		sock_puts(connectlist[listnum],buffer);
-//		sock_puts(connectlist[listnum],"\n");
-//		printf("responded: %s\n",buffer);
-//	}
-//}
-//
-//void read_socks() {
-//	int listnum;	     /* Current item in connectlist for for loops */
-//
-//	/* OK, now socks will be set with whatever socket(s)
-//	   are ready for reading.  Lets first check our
-//	   "listening" socket, and then check the sockets
-//	   in connectlist. */
-//
-//	/* If a client is trying to connect() to our listening
-//		socket, select() will consider that as the socket
-//		being 'readable'. Thus, if the listening socket is
-//		part of the fd_set, we need to accept a new connection. */
-//
-//	if (FD_ISSET(sock,&socks))
-//		handle_new_connection();
-//	/* Now check connectlist for available data */
-//
-//	/* Run through our sockets and check to see if anything
-//		happened with them, if so 'service' them. */
-//
-//	for (listnum = 0; listnum < 5; listnum++) {
-//		if (FD_ISSET(connectlist[listnum],&socks))
-//			deal_with_data(listnum);
-//	} /* for (all entries in queue) */
-//}
+bool get_line(string &in_buf, string &out_line)
+{
+  string::size_type i = in_buf.find ('\n');
+  if (i == string::npos)
+    return false;
 
+  out_line = in_buf.substr (0, i);  /* extract first line */
+  strip_control_chars(out_line);
+  in_buf = in_buf.substr (i + 1, string::npos); /* get rest of string */
+  return true;
+}
+
+void write_from_buffer(int &to_socket, string &from_buf)
+{
+  while (to_socket != NO_SOCKET && !from_buf.empty ()) {
+    // send a maximum of 512 at a time
+    int len = min<int> (from_buf.size (), 512);
+
+    // send to player
+    int bytes = write (to_socket, from_buf.c_str (), len );
+
+    // check for bad write
+    if (bytes < 0) {
+      if (errno != EWOULDBLOCK )
+        perror ("send to player");  /* some other error? */
+      return;
+    }
+
+    // remove what we successfully sent from the buffer
+    from_buf.erase (0, bytes);
+
+    // if partial write, exit
+    if (bytes < len)
+      break;
+
+  } /* end of having write loop */
+}
+
+bool read_into_buffer(int &from_socket, string &to_buf)
+{
+  static vector<char> buf (1000);
+
+  int bytes = read (from_socket, &buf [0], buf.size ());
+
+  if (bytes == -1) {
+    if (errno != EWOULDBLOCK)
+      perror ("read from player");
+    return true;
+  }
+
+  if (bytes <= 0) {
+    close (from_socket);
+    cerr << "Connection " << from_socket << " closed" << endl;
+    from_socket = NO_SOCKET;
+    return false;
+  }
+  
+  to_buf += string (&buf [0], bytes);    /* add to input buffer */
+  return true;
+}
+
+bool connect_with_nonblocking(int &sock, const string &host, const string &port)
+{
+  struct addrinfo hints, *servinfo, *p;
+  int rv;
+  char s[INET6_ADDRSTRLEN];
+
+  memset(&hints, 0, sizeof hints);
+  hints.ai_family = AF_UNSPEC;
+  hints.ai_socktype = SOCK_STREAM;
+
+  if ((rv = getaddrinfo(host.c_str(), port.c_str(), &hints, &servinfo)) != 0) {
+    fprintf(stderr, "getaddrinfo: %s\n", gai_strerror(rv));
+    return false;
+  }
+
+  // loop through all the results and connect to the first we can
+  for(p = servinfo; p != NULL; p = p->ai_next) {
+    if ((sock = socket(p->ai_family, p->ai_socktype, p->ai_protocol)) == -1) {
+      perror("client: socket");
+      continue;
+    }
+    if (connect(sock, p->ai_addr, p->ai_addrlen) == -1) {
+      close(sock);
+      perror("client: connect");
+      continue;
+    }
+    break;
+  }
+
+  if (p == NULL) {
+    fprintf(stderr, "client: failed to connect\n");
+    return false;
+  }
+
+  // Get some ASIO up in here
+  if (fcntl( sock, F_SETFL, FNDELAY ) == -1) {
+    perror("client: fndelay");
+    return false;
+  }
+
+  inet_ntop(p->ai_family, get_in_addr((struct sockaddr *)p->ai_addr),
+            s, sizeof s);
+  printf("client: connecting to %s\n", s);
+
+  freeaddrinfo(servinfo); // all done with this structure
+  return true;
+}
+
+void irc_send_line(string line)
+{
+  // Toss it in the buffer.  The io loop will get it.
+  cout << ">" << line << endl;
+  ircOutBuf += line + "\n";
+}
+
+void irc_command(string command, string param, string trail)
+{
+  irc_send_line(command + " " + param + " :" + trail);
+}
+
+void say_to(string nick, string text)
+{
+  irc_command("PRIVMSG", nick, text);
+}
+
+void say_to_room(string text)
+{
+  say_to(room, text);
+}
+
+void me_say_to(string nick, string text)
+{
+  say_to(nick, "\001ACTION " + text + "\001");
+}
+
+void me_say_to_room(string text)
+{
+  me_say_to(room, text);
+}
+
+void irc_quit()
+{
+  say_to_room("Peace out, bitches!");
+  irc_send_line("QUIT :Like tears in the rain, time to die.");
+}
+
+void close_comms()
+{
+  // Disconnect players
+  for (PlayerListIterator i = playerList.begin(); i != playerList.end(); ++i) {
+    if ((*i)->socket != NO_SOCKET) {
+      close((*i)->socket);
+      delete (*i);
+    }
+  }
+  playerList.clear();
+
+  // Disconnect irc
+  if (ircSocket != NO_SOCKET) {
+    close(ircSocket);
+  }
+}
+
+// For signal handling
+void bailout (int sig)
+{
+  if (isQuitting) {
+    // Be more forceful the second time through here
+    isRunning = false;
+  } else {
+    irc_quit();
+    isQuitting = true;
+  }
+}
+
+IrcPlayer *get_player_from_nick(string nick)
+{
+  for (PlayerListIterator i = playerList.begin(); i != playerList.end(); ++i) {
+    if ((*i)->socket != NO_SOCKET) {
+      if (boost::iequals((*i)->nick, nick)) {
+        return (*i);
+      }
+    }
+  }  
+  return NULL;
+}
+
+bool add_player(string nick)
+{
+  say_to(nick, "Would you like to play a game?");
+  say_to(nick, "How about global thermonuclear war?");
+  say_to(nick, "Or how about some MF'n uMUD!?");
+  int sock;
+  if (!connect_with_nonblocking(sock, UMUD_HOST, UMUD_PORT)) {
+    say_to(nick, "Or not, cause the uMUD server rejected you.");
+    cout << "Couldn't connect to uMUD" << endl;
+    return false;
+  }
+  IrcPlayer *player = new IrcPlayer();
+  player->nick = nick;
+  player->socket = sock;
+  playerList.push_front(player);
+  return true;
+}
+
+void process_room_umud_command(string command, string nick)
+{
+  if (boost::iequals(command, "play")) {
+    // Initiate a game of umud in a private room
+    say_to_room("Do something with sockets one day.");
+    add_player(nick);
+  } else if (boost::starts_with(command, "/me ")) {
+    // Dance for the people!
+    me_say_to_room(command.substr(4));
+  }
+}
+
+void process_player_command(IrcPlayer *player, string command)
+{
+  // TODO: Handle ACTION->emote conversion
+  player->out_buf += command + "\n";
+}
+
+void irc_process_line(string line)
+{
+  string prefix, command, params, trail, nick, umud_command;
+  boost::cmatch result;
+  if (boost::regex_match(line.c_str(), result, irc_regex)) {
+    // Grab all the tasty captures!
+    prefix = result.str("prefix");
+    command = result.str("command");
+    params = result.str("params");
+    trail = result.str("trail");
+  } else {
+    // Malformed message from the server.  This should not happen.
+    cout << "No regex match!" << endl;
+    return;
+  }
+  if (command == "NOTICE" && trail == "*** No Ident response") {
+    irc_send_line("NICK uMUDbot");
+    irc_send_line("USER uMUDbot * 8 :uMUD BOT");
+    irc_send_line("PRIVMSG nickserv :IDENTIFY l3tm3!n101");
+  } else if(command == "376") { // :End of /MOTD command.
+    irc_send_line("JOIN " + room);
+    irc_send_line("PRIVMSG ChanServ :OP " + room + " uMUDbot");
+  } else if(command == "ERROR" && boost::starts_with(trail, "Closing Link")) {
+    isRunning = false;
+  } else if(command == "PING") {
+    irc_send_line("PONG :" + trail);
+  } else if(command == "PRIVMSG") {
+    // We got a message!
+    if (boost::regex_match(prefix.c_str(), result, nick_regex)) {
+      // Found out who is talking
+      nick = string(result[1].first, result[1].second);
+      if (boost::iequals(params, room)){
+        // From the lobby
+        if (boost::regex_match(trail.c_str(), result, umud_command_regex)) {
+          // This is a command for us.
+          umud_command = string(result[1].first, result[1].second);
+          process_room_umud_command(umud_command, nick);
+        }
+      } else { // Prolly equals my nick, don't bother checking (famous last words)
+        // From somewhere else.  Perhaps from the nick themself?
+        IrcPlayer *player = get_player_from_nick(nick);
+        if (player) {
+          process_player_command(player, trail);
+        } else {
+          say_to(nick, "You aren't connected to the game!  Go to " + room + " and ask to play.");
+        }
+      }
+    } else {
+      cout << "Can't find a nick on this msg" << endl;
+    }
+  } else {
+    cout << "Ignoring " << "(" << prefix << ")(" << command << ")(" << params << ")(" << trail << ")" << endl;
+    return;
+  }
+  cout << "(" << prefix << ")(" << command << ")(" << params << ")(" << trail << ")" << endl;
+}
+
+void irc_process_lines()
+{
+  string line;
+  while (get_line(ircInBuf, line)) {
+    irc_process_line(line);
+  }
+}
+
+void player_process_line(IrcPlayer *player, string line)
+{
+  say_to(player->nick, line);
+}
+
+void player_process_lines(IrcPlayer *player)
+{
+  string line;
+  while (get_line(player->in_buf, line)) {
+    player_process_line(player, line);
+  }  
+}
+
+void players_process_lines()
+{
+  for (PlayerListIterator i = playerList.begin(); i != playerList.end(); ++i) {
+    if ((*i)->socket != NO_SOCKET) {
+      player_process_lines((*i));
+    }
+  }
+}
+
+void remove_disconnected_players()
+{
+  PlayerListIterator i = playerList.begin ();
+  while (i != playerList.end ()) {
+    IrcPlayer *player = (*i);
+    PlayerListIterator prev = i;
+    i++;
+    if (player->socket == NO_SOCKET) {
+      say_to(player->nick, "You are now disconnected from uMUD");
+      playerList.erase(prev);
+      delete player;
+      player = 0;
+    }
+  } /* end of looping through players */
+}
+
+int set_descriptors()
+{
+  FD_ZERO(&in_set);
+  FD_ZERO(&out_set);
+
+  int max_socket = ircSocket;
+  
+  // We want IO from irc
+  FD_SET(ircSocket, &in_set);
+  if (!ircOutBuf.empty()) {
+    FD_SET(ircSocket, &out_set);
+  }
+  
+  // And IO from players
+  for (PlayerListIterator i = playerList.begin(); i != playerList.end(); ++i) {
+    if ((*i)->socket != NO_SOCKET) {
+      max_socket = max ((*i)->socket, max_socket);
+      FD_SET((*i)->socket, &in_set);
+      if (!(*i)->out_buf.empty()) {
+        FD_SET((*i)->socket, &out_set);
+      }
+    }
+  }  
+  return max_socket;
+}
+
+void fill_buffers()
+{
+  if (FD_ISSET(ircSocket, &in_set)) {
+    // Handle the irc happenings
+    read_into_buffer(ircSocket, ircInBuf);
+  }
+  if (FD_ISSET(ircSocket, &out_set)) {
+    // Send that irc shit out!
+    write_from_buffer(ircSocket, ircOutBuf);
+  }
+
+  // Loop through the players, checking the status, handling the buffers
+  for (PlayerListIterator i = playerList.begin(); i != playerList.end(); ++i) {
+    if ((*i)->socket != NO_SOCKET) {
+      if (FD_ISSET((*i)->socket, &in_set)) {
+        read_into_buffer((*i)->socket, (*i)->in_buf);
+      }
+      if (FD_ISSET((*i)->socket, &out_set)) {
+        write_from_buffer((*i)->socket, (*i)->out_buf);
+      }
+    }
+  }
+}
+
+void io_loop()
+{
+  // select timeout
+  struct timeval timeout;
+  timeout.tv_sec = 0;
+  timeout.tv_usec = 500 * 1000;
+
+  cout << "Entering io loop" << endl;
+  while (isRunning) {
+
+    int max_socket = set_descriptors();
+
+    if (select(max_socket + 1, &in_set, &out_set, NULL, &timeout) > 0) {
+      fill_buffers();
+    }
+
+    irc_process_lines();
+    players_process_lines();
+
+    remove_disconnected_players();
+  }
+  cout << "io loop done" << endl;
+}
+
+
+int main(int argc, char *argv[])
+{
+  cout << "uMUD bot starting up" << endl;
+  if (argc < 2) {
+    cout << "Usage: bot host" << endl;
+    return -1;
+  }
+ 
+  signal (SIGINT,  bailout);
+  signal (SIGTERM, bailout);
+  signal (SIGHUP,  bailout);
+
+  if (!connect_with_nonblocking(ircSocket, argv[1], PORT)) {
+    return -1;
+  }
+
+  io_loop();
+
+  close_comms();
+  return 0;
+}

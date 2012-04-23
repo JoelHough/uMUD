@@ -19,6 +19,9 @@ EXE		= server
 # #
 all: lua $(EXE)
 
+bot: umud_bot.o
+	$(CC) $(CFLAGS) -o $@ $+ -lboost_regex
+
 lua:
 	cd $(LUA_DIR) && $(MAKE) linux local
 

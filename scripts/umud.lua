@@ -25,16 +25,25 @@ local function force_do(command)
 end
 
 require'things'
-add_atoms{eval='verb'}
+add_atoms{eval='verb', hotpatch='verb'}
 add_functions{
    ['connect player'] = function(player)
-      force_do('whisk ' .. player.id .. ' to the Void')
+      force_do('whisk ' .. player.id .. ' to The Void')
    end,
    ['everything'] = things,
    ['detail thing'] = function(thing) return thing.long_desc or 'It is very non-descript.' end,
    ['name thing'] = function(thing) return thing.name or 'nameless thing' end,
+   -- *************************
+   ['name rock'] = function(rock) return 'rock' end,	
+   ['name coin'] = function(coin) return 'coin' end,
+   -- *************************
+
    ['definite thing'] = function(thing) return 'the ' .. M('name', thing) end,
    ['indefinite thing'] = function(thing) return 'a ' .. M('name', thing) end, -- TODO 'an'
+
+   -- *************************
+   ['indefinite item'] = function(item) return 'a ' .. M('name', item) end,
+   -- *************************
    ['definite player'] = function(player) return M('name', player) end,
    ['indefinite player'] = function(player) return M('name', player) end,
    ['player disconnect'] = function(player)
@@ -44,6 +53,18 @@ add_functions{
       server_disconnect_player(player.id)
    end,
    ['subject-bind-search eval'] = 'none',
+   ['muderator hotpatch'] = function(muderator)
+      player_text(muderator, "You begin reciting the arcane rite from the Book of Creation.  You feel the power of the universe soaking into you.")
+      witness_text(muderator, M('indefinite', muderator) .. ' begins chanting in an ancient, powerful tongue.  A blow glow swells and envelopes them.')
+      if os.execute('git pull') ~= 0 then
+         player_text(muderator, "*CRACK*\nThe energy flees, leaving you drained.  Maybe the moon is in the wrong phase?")
+         witness_text(muderator, "You here a tremendous *CRACK* as the blow glow rushes from " .. M('indefinite', muderator) .. '.  You get the feeling that whatever was happening did not go well.')
+      else
+         dofile'../scripts/hotpatch.lua'
+         player_text(muderator, "*FWOOSH*\nThe energy flies from you, altering the very fabric of time and space!")
+         witness_text(muderator, "You here a tremendous *FWOOSH* as the blow glow rushes from " .. M('indefinite', muderator) .. ', washing over you.  You get the feeling that whatever was happening, the world will never be the same.')
+      end
+   end,
    ['muderator eval string-type'] = function(muderator, cmd)
       player_text(muderator, "Your words run deep.")
       loadstring(cmd.string)()
@@ -125,7 +146,8 @@ local void = get_thing('void') or add_room('void', 'The Void', 'A formless, blac
 force_do('whisk God to the Void')
 
 -- Creating things
-add_atoms{create='verb'}
+-- <Adding carryables> ~ "item" --> put in the list below!
+add_atoms{create='verb', item='thing', [{'rock', 'coin'}] = 'item'}
 add_functions{
    ['subject-bind-search create'] = 'none',
    ['muderator create thing'] = function(muderator, thing_group)
@@ -137,6 +159,23 @@ add_functions{
       player_text(muderator, 'You will ' .. M('indefinite', thing) .. ' into being.')
       witness_text(muderator, M('indefinite', muderator) .. ' concentrates for a moment. Before your very eyes, ' .. M('indefinite', thing) .. ' appears!')
    end,
+-- Creating Items
+-- *****************************
+	['muderator create item'] = function(muderator, i)
+		DEBUG('Create_Item called...')
+		--local item = add_item()
+		local types = i.adjectives
+		table.insert(types, i.noun)
+		local item_thing = get_thing(create_thing(i.noun, {types=types, name=i.noun}))
+		-- <Item_Thing ~ nil> DEBUG
+		DEBUG('ITEM-THING --> <' .. item_thing.name .. '>')
+		-- ------------------------
+		local container = M('container', muderator)
+      		do_to('put-in', item_thing, container)
+      		player_text(muderator, 'You will ' .. M('indefinite', item_thing.name) .. ' into being.')
+      		witness_text(muderator, M('indefinite', muderator) .. ' makes a(n) ' .. M('indefinite', item_thing.name) .. ' appears!')
+   	end,
+-- *****************************
              }
 -- Creating rooms
 add_functions{
@@ -179,7 +218,7 @@ add_functions{
       return true
    end
              }
-
+-- Directional Portals
 -- ***************************************************************************
 add_atoms { [{'north', 'east', 'south', 'west'}]="portal" }
 add_functions
@@ -205,17 +244,6 @@ add_functions
 	  do_to('put-in', player, get_thing(M('exit', portal)))
 	end
 }			 
-
-
-
-
-
-
-
-
-
-
-
 -- ****************************************************************************
 -- Cliff!
 add_atoms{cliff="portal"}
@@ -231,8 +259,31 @@ add_functions{
       return true
    end
              }
-
-
+-- Inventory?
+-- ****************************************************************************
+add_atoms{[{'inventory', 'get', 'drop'}]='verb', item='noun'}
+add_functions
+{
+	['player inventory'] = function(player)
+		open_inventory(player.name)
+	end,
+	['subject-bind-limit get'] = 'single',
+	['object-bind-limit get'] = 'single',
+	['player get item'] = function(player, item)
+		-- Remove item from original container
+		remove_content(item)
+		add_to_inventory(player.name, item)
+	end,
+	['subject-bind-search drop'] = 'global',
+	['player drop item'] = function(player, item)
+		-- Remove item from inventory
+		DEBUG('Dropped Item? <' .. item.name .. '>')
+		--DEBUG('Dropped Item\'s Container <' .. M('container', item) .. '>')
+		remove_content(item)
+		drop_from_inventory(player.name, item)
+	end
+}
+-- ****************************************************************************
 -- Talking and other pleasantries
 add_atoms{[{'say', 'dance', 'apologize', 'bark', 'bmoc', 'combhair', 'slap', 'flex', 'nod', 'relax', 'bow', 'cheer', 'grin', 'chuckle'}]='verb', to='preposition'}
 
