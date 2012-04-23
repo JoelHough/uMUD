@@ -85,7 +85,8 @@ add_functions{
       return title .. "\n" .. hr .. "\n" .. detail .. content_list
    end,
    ['put-in thing container'] = move_content,
-   ['pit-in item container'] = move_content,
+   -- <><><>
+   ['put-in item container'] = move_content,
    ['player look'] = function(player)
       local container = M('container', player)
       if not container then
@@ -152,15 +153,15 @@ add_functions{
 	['muderator create item'] = function(muderator, i)
 		DEBUG('Create_Item called...')
 		--local item = add_item()
-		--table.insert('item', i.noun)
 		local types = i.adjectives
+		table.insert(types, i.noun)
 		local item_thing = get_thing(create_thing(i.noun, {types=types, name=i.noun}))
 		-- <Item_Thing ~ nil> DEBUG
 		DEBUG('ITEM-THING --> <' .. item_thing.name .. '>')
 		-- ------------------------
 
 		local container = M('container', muderator)
-      		--do_to('put-in', item_thing, container)
+      		do_to('put-in', item_thing, container)
       		player_text(muderator, 'You will ' .. M('indefinite', item_thing.name) .. ' into being.')
       		witness_text(muderator, M('indefinite', muderator) .. ' makes a(n) ' .. M('indefinite', item_thing.name) .. ' appears!')
    	end,
