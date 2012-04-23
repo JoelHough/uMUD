@@ -36,21 +36,26 @@
 
 #include <arpa/inet.h>
 #include <boost/regex.hpp>
+#include <boost/algorithm/string/predicate.hpp>
 #include <boost/algorithm/string.hpp>
 
 using namespace std;
-using boost::iequals;
 
 #define PORT "6667" // the port client will be connecting to
 #define IRCHOST "irc.freenode.net"
 
 #define MAXDATASIZE 500 // max number of bytes we can get at once
 
+const string room = "#TeamException";
 boost::regex irc_regex("^(:(?<prefix>\\S+) )?(?<command>\\S+)( (?!:)(?<params>.+?))?( :(?<trail>.+))?$");
+boost::regex nick_regex("^(?<nick>\\S+)!(?<host>\\S+)$");
+boost::regex umud_command_regex("^\\s*umud:\\s*(.*)$");
 
 const int NO_SOCKET = -1;
 
 bool isRunning = true; // Keep looping?
+bool isQuitting = false; // Sent a quit?
+
 int ircSocket = NO_SOCKET;
 string ircOutBuf;
 string ircInBuf;
@@ -70,12 +75,6 @@ typedef list <IrcPlayer*> PlayerList;
 typedef PlayerList::iterator PlayerListIterator;
 
 PlayerList playerList;
-
-// For signal handling
-void bailout (int sig)
-{
-  isRunning = false;
-}
 
 // get sockaddr, IPv4 or IPv6:
 void *get_in_addr(struct sockaddr *sa)
@@ -153,17 +152,6 @@ bool read_into_buffer(int &from_socket, string &to_buf)
   return true;
 }
 
-void close_comms()
-{
-  // Disconnect players
-  // TODO:
-
-  // Disconnect irc
-  if (ircSocket != NO_SOCKET) {
-    close(ircSocket);
-  }
-}
-
 bool connect_to_irc(const string &host)
 {
   struct addrinfo hints, *servinfo, *p;
@@ -214,38 +202,123 @@ bool connect_to_irc(const string &host)
 
 void irc_send_line(string line)
 {
+  // Toss it in the buffer.  The io loop will get it.
+  cout << ">" << line << endl;
   ircOutBuf += line + "\n";
+}
+
+void irc_command(string command, string param, string trail)
+{
+  irc_send_line(command + " " + param + " :" + trail);
+}
+
+void say_to(string nick, string text)
+{
+  irc_command("PRIVMSG", nick, text);
+}
+
+void say_to_room(string text)
+{
+  say_to(room, text);
+}
+
+void me_say_to(string nick, string text)
+{
+  say_to(nick, "\001ACTION " + text + "\001");
+}
+
+void me_say_to_room(string text)
+{
+  me_say_to(room, text);
+}
+
+void irc_quit()
+{
+  irc_send_line("QUIT :Peace out, bitches!");
+}
+
+void close_comms()
+{
+  // Disconnect players
+  // TODO:
+
+  // Disconnect irc
+  if (ircSocket != NO_SOCKET) {
+    close(ircSocket);
+  }
+}
+
+// For signal handling
+void bailout (int sig)
+{
+  if (isQuitting) {
+    // Be more forceful
+    isRunning = false;
+  } else {
+    irc_quit();
+    isQuitting = true;
+  }
+}
+
+void process_room_umud_command(string command, string nick)
+{
+  if (boost::iequals(command, "play")) {
+    // Initiate a game of umud in a private room
+    say_to_room("Do something with sockets one day.");
+    say_to(nick, "Would you like to play a game?  How about global thermonuclear war?");
+  } else if (boost::starts_with(command, "/me ")) {
+    // Dance for the people!
+    me_say_to_room(command.substr(4));
+  }
 }
 
 void irc_process_line(string line)
 {
-  string prefix, command, params, trail;
+  string prefix, command, params, trail, nick, umud_command;
   boost::cmatch result;
   if (boost::regex_match(line.c_str(), result, irc_regex)) {
-    if (result[0].matched) {
-      prefix = result.str("prefix");
-      command = result.str("command");
-      params = result.str("params");
-      trail = result.str("trail");
-      cout << "(" << prefix << ")(" << command << ")(" << params << ")(" << trail << ")" << endl;
-    }
+    // Grab all the tasty captures!
+    prefix = result.str("prefix");
+    command = result.str("command");
+    params = result.str("params");
+    trail = result.str("trail");
+    cout << "(" << prefix << ")(" << command << ")(" << params << ")(" << trail << ")" << endl;
   } else {
+    // Malformed message from the server.  This should not happen.
     cout << "No regex match!" << endl;
+    return;
   }
-  string server_name = "";
   if (command == "NOTICE" && trail == "*** No Ident response") {
     irc_send_line("NICK uMUDbot");
     irc_send_line("USER uMUDbot * 8 :uMUD BOT");
     irc_send_line("PRIVMSG nickserv :IDENTIFY l3tm3!n101");
   } else if(command == "376") { // :End of /MOTD command.
-    irc_send_line("JOIN #TeamException");
-    irc_send_line("PRIVMSG ChanServ :OP #TeamException uMUDbot");
-  } else if(command == "ERROR" && trail == "Closing Link") {
+    irc_send_line("JOIN " + room);
+    irc_send_line("PRIVMSG ChanServ :OP " + room + " uMUDbot");
+  } else if(command == "ERROR" && boost::starts_with(trail, "Closing Link")) {
     isRunning = false;
   } else if(command == "PING") {
     irc_send_line("PONG :" + trail);
+  } else if(command == "PRIVMSG") {
+    // We got a message!
+    if (boost::regex_match(prefix.c_str(), result, nick_regex)) {
+      // Found out who is talking
+      nick = string(result[1].first, result[1].second);
+      if (boost::iequals(params, room)){
+        // From the lobby
+        if (boost::regex_match(trail.c_str(), result, umud_command_regex)) {
+          // This is a command for us.
+          umud_command = string(result[1].first, result[1].second);
+          process_room_umud_command(umud_command, nick);
+        }
+      } else {
+        // From somewhere else.  Perhaps from the nick themself?
+      }
+    } else {
+      cout << "Can't find a nick on this msg" << endl;
+    }
   } else {
-    cout << "Don't know what to do with that line" << endl;
+    cout << "^Don't know what to do with that line^" << endl;
   }
 }
 
