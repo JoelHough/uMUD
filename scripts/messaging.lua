@@ -1,5 +1,5 @@
 local function name_replace(text, name, with)
-   return (' ' .. text .. ' '):gsub('(%A)' .. name .. '(%A)', '%1' .. with .. '%2'):sub(2, -2)  -- Dirty space hack to sub at edges
+   return (text .. ' '):gsub('(%A)' .. name .. '(%A)', '%1' .. with .. '%2'):sub(1, -2)  -- Dirty space hack to sub at edges
 end
 
 function player_text(player, text)
