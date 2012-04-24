@@ -293,6 +293,7 @@ add_functions
 	['player drop item'] = function(player, item)
 		-- Remove item from inventory
 		DEBUG('Dropped Item? <' .. item.name .. '>')
+		player_text(player, '<DEBUG>: Dropping <' .. item.name .. '>')
 		--DEBUG('Dropped Item\'s Container <' .. M('container', item) .. '>')
 		remove_content(item)
 		drop_from_inventory(player.name, item)

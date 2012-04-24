@@ -60,6 +60,9 @@ end
 
 -- drop_from_inventory(player.name, item)
 function drop_from_inventory(id, item)
+
+	player_text(player, '<DEBUG>: In drop_from_inventory')
+
 	local player = get_player(id)
 	local area_around = M('container', player)
 
