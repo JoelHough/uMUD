@@ -5,7 +5,8 @@ function add_player(id, data)
    data.name = id
    data.id = id
    -- Inventory
-   data.inventory = {'guitar pick', 'lightsaber', '10 coins'}
+   -- data.inventory = {'guitar pick', 'lightsaber', '10 coins'}
+   data.contents = {'guitar pick', 'lightsaber', '10 coins'}
    if add_thing(id, data) then
       DEBUG('Added player \'' .. id .. '\'')
       return data
@@ -31,7 +32,8 @@ function open_inventory(id)
 	-- Start printing out things
 	-- Tables start indexing @ *1*
 	player_text(player, 'Your inventory contains: ')
-	for i,k in ipairs(player.inventory) do
+	--for i,k in ipairs(player.inventory) do
+	for i,k in ipairs(player.contents) do
 		player_text(player, '> ' .. i .. '  ' .. k)
 	end
 end
@@ -49,7 +51,8 @@ function add_to_inventory(id, item)
 		player_text(player, 'You\'re handling money, aren\'t you?')
 		up_monies(id)
 	else
-		table.insert(player.inventory, item.id)
+		--table.insert(player.inventory, item.id)
+		table.insert(player.contents, item.id)
 	end
 
 	-- Put the item in the player's inventory-table
@@ -67,8 +70,10 @@ function drop_from_inventory(id, item)
 	local area_around = M('container', player)
 
 	-- Take out of inventory
-	local index = player.inventory[item.id]
-	table.remove(player.inventory, index)
+	--local index = player.inventory[item.id]
+	local index = player.contents[item.id]
+	--table.remove(player.inventory, index)
+	table.remove(player.contents, index)
 
 	-- Put item into the surrounding area <Does Not work!>....
 	DEBUG('area_around ~ <' .. area_around.name .. '>')
@@ -87,7 +92,8 @@ function up_monies(id)
 		-- Loop through I - find key that contains '$'...
 		-- convert digits to numbers, +1, restore...
 	local pattern = "coins"
-	for i,k in ipairs(player.inventory) do
+	--for i,k in ipairs(player.inventory) do
+	for i,k in ipairs(player.contents) do
 		local find1, find2 = string.find(k, pattern)
 		-- <DEBUG>
 		player_text(player, 'i = ' .. i .. ', k = ' .. k)
