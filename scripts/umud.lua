@@ -224,10 +224,11 @@ add_atoms { [{'north', 'east', 'south', 'west'}]="portal" }
 add_functions
 {	
 	-- <NOT TESTED>!!!
+	['name north'] = function(north) return 'Path to the North'	end,
 	['muderator create-to north room'] = function(muderator, port, room)
 	  local id=create_thing(port.noun, {types={port.noun}, exit=room.id})
       	  local portal = get_thing(id)
-	  portal.long_desc = 'North Portal'
+	  portal.long_desc = 'North'
 	  portal.name = 'North'
       	  do_to('put-in', portal, M('container', muderator))
       	  local portal_text = capitalize(M('indefinite', portal))

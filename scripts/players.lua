@@ -71,7 +71,7 @@ function drop_from_inventory(id, item)
 	DEBUG('area_around ~ <' .. area_around.name .. '>')
 	table.insert(area_around.contents, item)
 
-	-- <Message Action!>
+	-- Message Action!
 	player_text(player, 'You drop ' .. item.name .. ' from your inventory.')
 	witness_text(player, 'Drops ' .. item.name .. ' onto the ground.')
 
@@ -88,9 +88,13 @@ function up_monies(id)
 		local find1, find2 = string.find(k, pattern)
 		-- <DEBUG>
 		player_text(player, 'i = ' .. i .. ', k = ' .. k)
-
 		if find1 then
-			player_text(player, 'find1 for \"' .. k .. '\" is ' .. find1)	end
+			-- Grab the integer representing the amount
+
+			-- Increment it
+
+
+			--player_text(player, 'find1 for \"' .. k .. '\" is ' .. find1)	end
 
 	end
 end
