@@ -285,6 +285,8 @@ add_functions
 	--['object-bind-limit get'] = 'single',
 	['subject-bind-limit get'] = 'any',
 	['player get item'] = function(player, item)
+		-- <DEBUG>
+		player_text(player, 'IN GET ITEM')
 		-- Remove item from original container
 		remove_content(item)
 		add_to_inventory(player.name, item)

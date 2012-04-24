@@ -52,6 +52,8 @@ function add_to_inventory(id, item)
 		up_monies(id)
 	else
 		--table.insert(player.inventory, item.id)
+		-- <DEBUG>
+		player_text(player, 'You\'re handling God knows what, aren\'t you?')
 		table.insert(player.contents, item.id)
 	end
 
