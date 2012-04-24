@@ -5,7 +5,7 @@ function add_player(id, data)
    data.name = id
    data.id = id
    -- Inventory
-   data.inventory = {'guitar pick', 'lightsaber', '$ 0'}
+   data.inventory = {'guitar pick', 'lightsaber', '10 coins'}
    if add_thing(id, data) then
       DEBUG('Added player \'' .. id .. '\'')
       return data
@@ -47,10 +47,13 @@ function add_to_inventory(id, item)
 	--DEBUG('<><><><><> item.name = <' .. item.name .. '>')
 	if item.name == 'coin' then
 		player_text(player, 'You\'re handling money, aren\'t you?')
+		up_monies(id)
+	else
+		table.insert(player.inventory, item.id)
 	end
 
 	-- Put the item in the player's inventory-table
-	table.insert(player.inventory, item.id)
+	--table.insert(player.inventory, item.id)
 	player_text(player, 'You pick up a ' .. item.name)
 	witness_text(player, 'Picks ' .. item.name .. ' up from the ground.')
 end
@@ -73,6 +76,26 @@ function drop_from_inventory(id, item)
 	witness_text(player, 'Drops ' .. item.name .. ' onto the ground.')
 
 end
+
+-- Adjust currency when picked up
+function up_monies(id)
+	local player = get_player(id)
+	-- Get the current total currency of the player
+		-- Loop through I - find key that contains '$'...
+		-- convert digits to numbers, +1, restore...
+	local pattern = "coins"
+	for i,k in ipairs(player.inventory) do
+		local find1, find2 = string.find(k, pattern)
+		-- <DEBUG>
+		player_text(player, 'i = ' .. i .. ', k = ' .. k)
+
+		if find1 then
+			player_text(player, 'find1 for \"' .. k .. '\" is ' .. find1)	end
+
+	end
+end
+
+
 
 
 	

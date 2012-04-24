@@ -166,9 +166,9 @@ add_functions{
 		--local item = add_item()
 		local types = i.adjectives
 		table.insert(types, i.noun)
-		local item_thing = get_thing(create_thing(i.noun, {types=types, name=i.noun}))
+		local item_thing = get_thing(create_thing(i.noun, {types=types,name=i.noun}))
 		-- <Item_Thing ~ nil> DEBUG
-		DEBUG('ITEM-THING --> <' .. item_thing.name .. '>')
+		-- DEBUG('ITEM-THING --> <' .. item_thing.name .. '>')
 		-- ------------------------
 		local container = M('container', muderator)
       		do_to('put-in', item_thing, container)
@@ -222,7 +222,20 @@ add_functions{
 -- ***************************************************************************
 add_atoms { [{'north', 'east', 'south', 'west'}]="portal" }
 add_functions
-{
+{	
+	-- <NOT TESTED>!!!
+	['muderator create-to north room'] = function(muderator, port, room)
+	  local id=create_thing(port.noun, {types={port.noun}, exit=room.id})
+      	  local portal = get_thing(id)
+	  portal.long_desc = 'North Portal'
+	  portal.name = 'North'
+      	  do_to('put-in', portal, M('container', muderator))
+      	  local portal_text = capitalize(M('indefinite', portal))
+	  player_text(muderator, 'You concentrate on connecting to another place. ' .. portal_text .. ' appears before you! You decide to call it \'' .. portal.name .. '\'.')
+      	  witness_text(muderator, M('indefinite', muderator) .. ' stares north into space with a piercing gaze.  ' .. portal_text .. ' appears before them!')
+	end,
+
+
 	['player go north'] = function(player, portal)
 	  player_text(player, 'You travel north...')
 	  witness_text(player, M('indefinite', player) .. ' travels north.')
@@ -269,12 +282,13 @@ add_functions
 	end,
 	--['subject-bind-limit get'] = 'single',
 	--['object-bind-limit get'] = 'single',
+	['subject-bind-limit get'] = 'any',
 	['player get item'] = function(player, item)
 		-- Remove item from original container
 		remove_content(item)
 		add_to_inventory(player.name, item)
 	end,
-	['subject-bind-search drop'] = 'global',
+	['subject-bind-search drop'] = 'inventory',
 	['player drop item'] = function(player, item)
 		-- Remove item from inventory
 		DEBUG('Dropped Item? <' .. item.name .. '>')
@@ -402,5 +416,9 @@ add_functions
       ['player slap'] = function(player)
         witness_text(player, M('indefinite', player)..' slaps himself with a trout. Ouch!');
 	player_text(player, 'You slap yourself with a trout. Ouch!');
+      end,
+      ['player slap player'] = function(p1, p2)
+	witness_dance(player, M('indefinite', p1) .. ' slaps ' .. M('indefinite', p2) .. ' with a trout. Ouch!')
+	player_text(player, 'You slap ' .. M('indefinite', p2) .. ' with a trout. Ouch!')
       end
 }
