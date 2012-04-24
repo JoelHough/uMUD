@@ -420,7 +420,7 @@ add_functions
 	player_text(player, 'You slap yourself with a trout. Ouch!');
       end,
       ['player slap player'] = function(p1, p2)
-	witness_dance(player, M('indefinite', p1) .. ' slaps ' .. M('indefinite', p2) .. ' with a trout. Ouch!')
-	player_text(player, 'You slap ' .. M('indefinite', p2) .. ' with a trout. Ouch!')
+	witness_text(p1, M('indefinite', p1) .. ' slaps ' .. M('indefinite', p2) .. ' with a trout. Ouch!')
+	player_text(p1, 'You slap ' .. M('indefinite', p2) .. ' with a trout. Ouch!')
       end
 }
