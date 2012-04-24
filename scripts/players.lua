@@ -92,8 +92,8 @@ function up_monies(id)
 			-- Grab the integer representing the amount
 
 			-- Increment it
-
-
+		
+		end
 			--player_text(player, 'find1 for \"' .. k .. '\" is ' .. find1)	end
 
 	end
