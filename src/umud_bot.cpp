@@ -55,6 +55,7 @@ boost::regex nick_regex("^(?<nick>\\S+)!(?<host>\\S+)$");
 boost::regex umud_command_regex("^\\s*umud:\\s*(.*)$");
 
 const int NO_SOCKET = -1;
+vector<string> unknown_command_responses;
 
 bool isRunning = true; // Keep looping?
 bool isQuitting = false; // Sent a quit?
@@ -314,6 +315,9 @@ void process_room_umud_command(string command, string nick)
   } else if (boost::starts_with(command, "/me ")) {
     // Dance for the people!
     me_say_to_room(command.substr(4));
+  } else {
+    me_say_to_room(unknown_command_responses[rand() % unknown_command_responses.size()]);
+    me_say_to_room("Try play or /me");
   }
 }
 
@@ -512,6 +516,21 @@ int main(int argc, char *argv[])
     return -1;
   }
  
+  srand(time(NULL));
+  string dont_know = "I don't know that command";
+  string dont_know_drew_you_this = dont_know + ", so I drew you this ";
+
+  unknown_command_responses.push_back(dont_know_drew_you_this + "monkey :(|)");
+  unknown_command_responses.push_back(dont_know_drew_you_this + "awesome rockin' out hand \\m/");
+  unknown_command_responses.push_back(dont_know_drew_you_this + "face :|");
+  unknown_command_responses.push_back(dont_know_drew_you_this + "guy with awesome glasses B-)");
+  unknown_command_responses.push_back(dont_know_drew_you_this + "weiner dog <[.,=.,]-");
+  unknown_command_responses.push_back(dont_know_drew_you_this + "excited guy ☜(˚▽˚)");
+  unknown_command_responses.push_back(dont_know_drew_you_this + "zoidberg (V) (;;;;) (V).  What an honor!");
+  unknown_command_responses.push_back(dont_know_drew_you_this + "kirby (>‘o’)>");
+  unknown_command_responses.push_back(dont_know_drew_you_this + "fish ><((((º>");
+  unknown_command_responses.push_back(dont_know_drew_you_this + "face ◕ ‿‿ ◕");
+
   signal (SIGINT,  bailout);
   signal (SIGTERM, bailout);
   signal (SIGHUP,  bailout);
