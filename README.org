@@ -17,3 +17,43 @@ flock of wild notes:
    	      note  note
  	  note note 
 	note
+
+### Beginning of readme in progress.
+
+Umud - V1.0
+
+by Team Exception
+	John Wells, Joel Hough, Bailey Malone, Cody Curtis, and James Murdock
+
+all rights reserved
+
+This is the first release
+
+Hardware and Software Requirements:
+Better off if you don't use a CADE Lab2 Machine.
+In fact, you are better off not compiling it at all and just playing with it by
+telnetting to: umud.hyob.net 4000
+
+Installation instructions:
+For further instructions please visit - (were we are hosting the user manual)
+
+Compile the source files by simply running the following command:
+
+make -k
+
+
+Known Problems:
+-those damn Romanian kids... forever.
+-the dreaded lpeg library
+
+Pricing information:
+Free to you, priceless to us.
+
+Contact information:
+John Wells    - john.wells@utah.edu
+James Murdock - james.murdock@utah.edu
+Cody Curtis   - mac.curtis@utah.edu
+Joel Hough    - joel@joelhough.com
+Bailey Malone - u0655383@utah.edu
+
+copyright 2012
