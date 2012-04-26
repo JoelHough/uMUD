@@ -199,3 +199,14 @@ end
 --test()
 
 add_atoms{'string-type'}
+
+function print_atoms()
+   print'digraph G {'
+   for k, v in pairs(collider) do
+      print('  "' .. k .. '" [color=blue];')
+      for _, c in pairs(v.desc) do
+         print('  "' .. k .. '" -> "' .. c.name .. '";')
+      end
+   end
+   print'}'
+end

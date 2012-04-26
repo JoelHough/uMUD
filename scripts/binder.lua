@@ -22,6 +22,7 @@ add_functions{
 
 function bind_from_container(container, phrase)
    if not container then return {} end
+   if not container.contents then return {} end
    return bind_from_list(container.contents, phrase)
 end
 
