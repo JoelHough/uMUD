@@ -12,7 +12,7 @@
 #define DBASE_H
 
 #include <string>
-#include <sqlite3.h>
+#include "sqlite3.h"
 
 class dBase
 {

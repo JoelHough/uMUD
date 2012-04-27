@@ -3,9 +3,8 @@
 # # Date: 	Spring 2012
 # #---------------------------------------------------------------
 #
-LUA_DIR         = ../lib/lua-5.1.5
 CC              = g++
-CFLAGS          = -g -Wall -pedantic -I$(LUA_DIR)/include -L$(LUA_DIR)/lib
+CFLAGS          = -g -Wall -I/home/jhough/include -L/home/jhough/lib
 CPPFLAGS        = $(CFLAGS)
 OBJS		= server.o dbase.o sqlite3.o lpeg.o Player.o lua_io.o main.o
 LIBS            = -llua -lpthread -ldl
@@ -17,13 +16,10 @@ EXE		= server
 # #
 # # when you run make by itself, this is what it will try to create
 # #
-all: lua $(EXE)
+all: $(EXE) bot
 
 bot: umud_bot.o
 	$(CC) $(CFLAGS) -o $@ $+ -lboost_regex
-
-lua:
-	cd $(LUA_DIR) && $(MAKE) linux local
 
 lpeg.o: lpeg.c
 	gcc $(CFLAGS) $(INCLUDES) -c $< -o $@
@@ -50,9 +46,9 @@ $(EXE): $(OBJS)
 # #
 #
 clean:
-	rm -f *.o $(EXE)
+	rm -f *.o $(EXE) bot
 
-rebuild: clean $(EXE)
+rebuild: clean $(EXE) bot
 
 .PHONY: check-syntax
 check-syntax:

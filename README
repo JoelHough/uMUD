@@ -1,0 +1,46 @@
+#+title: uMUD
+#+author: Team Exception
+
+The best damn CS 3505 MUD that we've made this year.
+
+* What is uMUD?
+Awesome.
+
+* Who dunnit?
+Team Exception!
+-Cody Curtis
+-Joel Hough
+-Bailey Malone
+-James Murdock
+-John Wells
+
+* How buildit?
+For further instructions please visit - (were we are hosting the user manual)
+
+Compile the source files by simply running the following command from the src/ directory:
+make
+
+* Running the server
+From src/:
+./server
+
+* Running the IRC bot:
+From src/:
+./bot <host>
+
+as in
+
+./bot irc.freenode.net
+
+* Known Problems
+-those damn Romanian kids... forever.
+
+* Pricing information
+Free to you, priceless to us.
+
+* If you need to yell at someone
+John Wells    - john.wells@utah.edu
+James Murdock - james.murdock@utah.edu
+Cody Curtis   - mac.curtis@utah.edu
+Joel Hough    - joel.hough@utah.edu
+Bailey Malone - u0655383@utah.edu
