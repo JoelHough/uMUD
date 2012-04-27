@@ -1,3 +1,7 @@
+--********************************************************************
+--Written for cs3505 spring2012 by: Team Exception: cody curtis, joel hough, bailey malone, james murdock, john wells.
+--*********************************************************************
+
 require'base'
 
 -- Protip: If you are accessing a field on a thing, you are probably doing it wrong.

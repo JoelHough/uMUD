@@ -1,3 +1,9 @@
+/*
+******************************************************************
+Written for cs3505 spring2012 by: Team Exception: cody curtis, joel hough, bailey malone, james murdock, john wells.
+****************************************************************
+*/
+
 #ifndef _LUA_IO_H_
 #define _LUA_IO_H_
 

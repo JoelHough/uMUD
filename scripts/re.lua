@@ -1,3 +1,7 @@
+--********************************************************************
+--Written for cs3505 spring2012 by: Team Exception: cody curtis, joel hough, bailey malone, james murdock, john wells.
+--*********************************************************************
+
 -- $Id: re.lua,v 1.39 2010/11/04 19:44:18 roberto Exp $
 
 -- imported functions and modules

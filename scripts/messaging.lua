@@ -1,3 +1,7 @@
+--********************************************************************
+--Written for cs3505 spring2012 by: Team Exception: cody curtis, joel hough, bailey malone, james murdock, john wells.
+--*********************************************************************
+
 local function name_replace(text, name, with)
    return (text .. ' '):gsub('(%A)' .. name .. '(%A)', '%1' .. with .. '%2'):sub(1, -2)  -- Dirty space hack to sub at edges
 end
