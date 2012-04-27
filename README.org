@@ -34,12 +34,27 @@ Better off if you don't use a CADE Lab2 Machine.
 In fact, you are better off not compiling it at all and just playing with it by
 telnetting to: umud.hyob.net 4000
 
+If you really want to compile it, you will need:
+a unix box
+lua library
+lpeg library
+sqlite3 library...
+
+... good luck.
+
+
 Installation instructions:
-For further instructions please visit - (were we are hosting the user manual)
+For further instructions please visit - (http://umud.hyob.net)
 
 Compile the source files by simply running the following command:
 
 make -k
+
+Run binary (if installation goes well) by typing the following command
+in the terminal:
+"./server"
+
+for further information refer to - (http://umud.hyob.net)
 
 
 Known Problems:
