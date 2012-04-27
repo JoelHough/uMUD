@@ -17,7 +17,22 @@ Team Exception!
 * Manuals
 See our website at http://umud.hyob.net/
 
+* How useit?
+We have a server and a bot running for your convenience!
+
+Telnet to:
+
+umud.hyob.net 400
+
+Or drop by and chat with the bot at the #TeamException room on Freenode if you're into the IRC.  Again, that's irc.freenode.net, #TeamException
+
+Say umud:play
+
 * How buildit?
+uMUD requires lua and boost.  lua requires ncurses.  These have been provided in the CADE environment in /home/jhough/lib and /home/jhough/include
+
+The Makefile already utilizes these paths.
+
 Compile the source files by simply running the following command from the src/ directory:
 make
 
