@@ -14,9 +14,10 @@ Team Exception!
 -James Murdock
 -John Wells
 
-* How buildit?
-For further instructions please visit - (were we are hosting the user manual)
+* Manuals
+See our website at http://umud.hyob.net/
 
+* How buildit?
 Compile the source files by simply running the following command from the src/ directory:
 make
 
