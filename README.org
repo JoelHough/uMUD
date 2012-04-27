@@ -6,69 +6,41 @@ The best damn CS 3505 MUD that we've made this year.
 * What is uMUD?
 Awesome.
 
-* Notes
-Put some notes here
+* Who dunnit?
+Team Exception!
+-Cody Curtis
+-Joel Hough
+-Bailey Malone
+-James Murdock
+-John Wells
 
-Added some notes there ;)
+* How buildit?
+For further instructions please visit - (were we are hosting the user manual)
 
-flock of wild notes:
-	note
- 	  note note 
-   	      note  note
- 	  note note 
-	note
+Compile the source files by simply running the following command from the src/ directory:
+make
 
-### Beginning of readme in progress.
+* Running the server
+From src/:
+./server
 
-Umud - V1.0
+* Running the IRC bot:
+From src/:
+./bot <host>
 
-by Team Exception
-	John Wells, Joel Hough, Bailey Malone, Cody Curtis, and James Murdock
+as in
 
-all rights reserved
+./bot irc.freenode.net
 
-This is the first release
-
-Hardware and Software Requirements:
-Better off if you don't use a CADE Lab2 Machine.
-In fact, you are better off not compiling it at all and just playing with it by
-telnetting to: umud.hyob.net 4000
-
-If you really want to compile it, you will need:
-a unix box
-lua library
-lpeg library
-sqlite3 library...
-
-... good luck.
-
-
-Installation instructions:
-For further instructions please visit - (http://umud.hyob.net)
-
-Compile the source files by simply running the following command:
-
-make -k
-
-Run binary (if installation goes well) by typing the following command
-in the terminal:
-"./server"
-
-for further information refer to - (http://umud.hyob.net)
-
-
-Known Problems:
+* Known Problems
 -those damn Romanian kids... forever.
--the dreaded lpeg library
 
-Pricing information:
+* Pricing information
 Free to you, priceless to us.
 
-Contact information:
+* If you need to yell at someone
 John Wells    - john.wells@utah.edu
 James Murdock - james.murdock@utah.edu
 Cody Curtis   - mac.curtis@utah.edu
-Joel Hough    - joel@joelhough.com
+Joel Hough    - joel.hough@utah.edu
 Bailey Malone - u0655383@utah.edu
-
-copyright 2012
