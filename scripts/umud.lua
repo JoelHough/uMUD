@@ -1,3 +1,7 @@
+--********************************************************************
+--Written for cs3505 spring2012 by: Team Exception: cody curtis, joel hough, bailey malone, james murdock, john wells.
+--*********************************************************************
+
 require'base'
 
 -- Protip: If you are accessing a field on a thing, you are probably doing it wrong.
@@ -354,7 +358,7 @@ add_functions
       ['player combhair player'] = function(p1, p2)
         witness_text(p1, M('indefinite', p1) .. ' combs ' .. 
 			 M('indefinite', p2)..'\'s hair.');
-	player_text(p1, 'You comb ' .. M('indefinite', p2) .. 'r hair.');
+	player_text(p1, 'You comb ' .. M('indefinite', p2) .. '\'s hair.');
       	end,
       ['player flex'] = function(player)
         witness_text(player, M('indefinite', player)..' flexes his muscles. So strong!');

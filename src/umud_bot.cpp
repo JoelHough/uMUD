@@ -1,4 +1,10 @@
 /*
+******************************************************************
+Written for cs3505 spring2012 by: Team Exception: cody curtis, joel hough, bailey malone, james murdock, john wells.
+****************************************************************
+*/
+
+/*
  * umud_bot.cpp
  *
  *  Created on: Apr 19, 2012

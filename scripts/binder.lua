@@ -1,3 +1,7 @@
+--********************************************************************
+--Written for cs3505 spring2012 by: Team Exception: cody curtis, joel hough, bailey malone, james murdock, john wells.
+--*********************************************************************
+
 require'functional'
 require'types'
 require'functions'
@@ -22,6 +26,7 @@ add_functions{
 
 function bind_from_container(container, phrase)
    if not container then return {} end
+   if not container.contents then return {} end
    return bind_from_list(container.contents, phrase)
 end
 

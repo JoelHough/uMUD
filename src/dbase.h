@@ -1,4 +1,10 @@
 /*
+******************************************************************
+Written for cs3505 spring2012 by: Team Exception: cody curtis, joel hough, bailey malone, james murdock, john wells.
+****************************************************************
+*/
+
+/*
   a class for sqlite database communication
   written by cody curtis for cs 3505 project5
   v1 4/10/12
@@ -12,7 +18,7 @@
 #define DBASE_H
 
 #include <string>
-#include <sqlite3.h>
+#include "sqlite3.h"
 
 class dBase
 {

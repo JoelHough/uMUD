@@ -1,3 +1,7 @@
+--********************************************************************
+--Written for cs3505 spring2012 by: Team Exception: cody curtis, joel hough, bailey malone, james murdock, john wells.
+--*********************************************************************
+
 agree$You agree.$You agree with <target>.
 amaze$You are amazed!$You are amazed by <target>.
 angry$You raise your fist in anger.$You raise your fist in anger at <target>.

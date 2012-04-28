@@ -1,3 +1,7 @@
+--********************************************************************
+--Written for cs3505 spring2012 by: Team Exception: cody curtis, joel hough, bailey malone, james murdock, john wells.
+--*********************************************************************
+
 -- uMUD Object Heirarchy
 require'functional'
 require'utils'
@@ -199,3 +203,17 @@ end
 --test()
 
 add_atoms{'string-type'}
+<<<<<<< HEAD
+=======
+
+function print_atoms()
+   print'digraph G {'
+   for k, v in pairs(collider) do
+      print('  "' .. k .. '" [color=blue];')
+      for _, c in pairs(v.desc) do
+         print('  "' .. k .. '" -> "' .. c.name .. '";')
+      end
+   end
+   print'}'
+end
+>>>>>>> b6c278e2d7db4c5325f520578ed73d761b7ce749

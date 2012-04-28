@@ -91,6 +91,8 @@ function drop_from_inventory(id, item)
 end
 
 -- Adjust currency when picked up
+--	Increment: WORKS
+--	DECREMENT: To-Do
 function up_monies(id)
 	local player = get_player(id)
 	-- Get the current total currency of the player
@@ -109,15 +111,15 @@ function up_monies(id)
 			-- Increment it
 			local newAmount = amount + 1
 			
-			player_text(player, 'Amt = <' .. amount .. '>')
-			player_text(player, 'NewAmt = <' .. newAmount .. '>')
+			--player_text(player, 'Amt = <' .. amount .. '>')
+			--player_text(player, 'NewAmt = <' .. newAmount .. '>')
 
 			-- Replace current inventory amount
 			local balance = newAmount .. ' coins'
 			table.insert(player.inventory, balance)
 			local oldBalance = player.inventory[i]
 			-- <DEBUG>
-			player_text(player, 'Old Balance = <' .. oldBalance .. '>')
+			--player_text(player, 'Old Balance = <' .. oldBalance .. '>')
 	
 			
 			table.remove(player.inventory, i)

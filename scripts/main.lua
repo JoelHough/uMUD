@@ -1,3 +1,7 @@
+--********************************************************************
+--Written for cs3505 spring2012 by: Team Exception: cody curtis, joel hough, bailey malone, james murdock, john wells.
+--*********************************************************************
+
 package.path = package.path .. ";../scripts/?.lua"
 require'log'
 log_level = 'DEBUG'

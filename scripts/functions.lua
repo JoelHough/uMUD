@@ -1,3 +1,7 @@
+--********************************************************************
+--Written for cs3505 spring2012 by: Team Exception: cody curtis, joel hough, bailey malone, james murdock, john wells.
+--*********************************************************************
+
 -- Functions table handling.
 require'types'
 require'log'
@@ -126,4 +130,26 @@ function do_to(func_name, doer, doee)
 
 
    return get_function{func_name, doer, doee}(doer, doee)
+end
+
+local function print_helper(parent, t)
+   local func = false
+   for k, v in pairs(t) do
+      if k == 1 then
+         print('  "' .. tostring(t)  .. '" [label="' .. parent .. '", style=filled, color=gray];')
+         func = true
+      else
+         print('  "' .. tostring(t) .. '" -> "' .. tostring(v) .. '";')
+         print_helper(k, v)
+      end
+   end
+   if not func then print('  "' .. tostring(t)  .. '" [label="' .. parent .. '", color=blue];') end
+end
+
+function print_functions()
+   print 'digraph G {'
+   for k, v in pairs(functions) do
+      print_helper(k, v)
+   end
+   print'}'
 end

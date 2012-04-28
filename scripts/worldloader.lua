@@ -1,3 +1,7 @@
+--********************************************************************
+--Written for cs3505 spring2012 by: Team Exception: cody curtis, joel hough, bailey malone, james murdock, john wells.
+--*********************************************************************
+
 --[[ World loader -- Hard coded functions suitable for world creation.
    
    The basic idea is this: A muderator (At this juncture, one with Lua experience) creates a simple
