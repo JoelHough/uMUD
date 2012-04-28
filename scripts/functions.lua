@@ -100,7 +100,7 @@ function get_function(atoms)
    if f == nil then
       WARNING('No function found for \'' .. print_atoms(atoms) .. '\'.')
    else
-      DEBUG('Found function \'' .. table.concat(found, ' ') .. '\' for \'' .. print_atoms(atoms) .. '\'')
+      --DEBUG('Found function \'' .. table.concat(found, ' ') .. '\' for \'' .. print_atoms(atoms) .. '\'')
    end
    return f
 end
@@ -121,5 +121,9 @@ end
 M = get_member
 
 function do_to(func_name, doer, doee)
+   -- <DEBUG>
+   --DEBUG('<><><> In Do_To with <' .. doer.name .. ', ' .. doee.name .. '>')
+
+
    return get_function{func_name, doer, doee}(doer, doee)
 end

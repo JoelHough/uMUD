@@ -36,6 +36,8 @@ add_functions{
    -- *************************
    ['name rock'] = function(rock) return 'rock' end,	
    ['name coin'] = function(coin) return 'coin' end,
+   ['name lightsaber'] = function(ls) return 'lightsaber' end,
+   ['name guitar pick'] = function(gp) return 'guitar pick' end,
    -- *************************
 
    ['definite thing'] = function(thing) return 'the ' .. M('name', thing) end,
@@ -96,6 +98,8 @@ add_functions{
       end
       return title .. "\n" .. hr .. "\n" .. detail .. content_list
    end,
+   -- Calls "Containers.move_content"
+   -- --> with the args (thing, container)
    ['put-in thing container'] = move_content,
    ['player look'] = function(player)
       local container = M('container', player)
@@ -147,7 +151,7 @@ force_do('whisk God to the Void')
 
 -- Creating things
 -- <Adding carryables> ~ "item" --> put in the list below!
-add_atoms{create='verb', item='thing', [{'rock', 'coin', 'key'}] = 'item'}
+add_atoms{create='verb', item='thing', [{'rock', 'coin', 'key', 'lightsaber', 'guitar pick'}] = 'item'}
 add_functions{
    ['subject-bind-search create'] = 'none',
    ['muderator create thing'] = function(muderator, thing_group)
@@ -294,7 +298,7 @@ add_functions
 	['subject-bind-search drop'] = 'inventory',
 	['player drop item'] = function(player, item)
 		-- Remove item from inventory
-		DEBUG('Dropped Item? <' .. item.name .. '>')
+		-- M('indefinite', item) ~ item.name
 		player_text(player, '<DEBUG>: Dropping <' .. item.name .. '>')
 		--DEBUG('Dropped Item\'s Container <' .. M('container', item) .. '>')
 		remove_content(item)

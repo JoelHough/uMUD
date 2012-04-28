@@ -11,7 +11,7 @@ end
 
 ---------------------------------------------------------------------------------------
 function add_parent(child, parent)
-   DEBUG('Relating ' .. child .. '->' .. parent)
+   --DEBUG('Relating ' .. child .. '->' .. parent)
    if collider[child] then
       if collider[parent] then
          if table.find(get_all_parents(child), parent) then
@@ -37,7 +37,7 @@ end
 
 
 function add_atom(child)
-   DEBUG('Adding atom ' .. child)
+   --DEBUG('Adding atom ' .. child)
    if not get_atom(child) then
       collider[child] = { name = child, anc = { } , desc = { } }
    else

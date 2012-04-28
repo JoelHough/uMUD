@@ -34,6 +34,11 @@ end
 -- The Idea is to return a unique Item ID (String#).
 function create_thing(type, t_entries)
 
+
+	-- <DEBUG>
+	DEBUG('\n<><><><><>Making <' .. type .. '>\n')
+
+
    --If this type of 'thing' hasn't been created yet, create the first one.
    --This also instantiates the 'root' thing, an un numbered representation of the entire category of this particular thing. 
    if not thing_counters[type] then
