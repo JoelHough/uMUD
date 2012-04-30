@@ -22,7 +22,7 @@ We have a server and a bot running for your convenience!
 
 Telnet to:
 
-umud.hyob.net 400
+umud.hyob.net 4000
 
 Or drop by and chat with the bot at the #TeamException room on Freenode if you're into the IRC.  Again, that's irc.freenode.net, #TeamException
 
